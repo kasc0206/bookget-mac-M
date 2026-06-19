@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"bytes"
@@ -16,20 +17,21 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 type KyudbSnu struct {
 	dt       *DownloadTask
+	dm       *downloader.DownloadManager
 	itemId   string
 	entry    string
 	pdfNames map[string]string
 }
 
 func NewKyudbSnu() *KyudbSnu {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &KyudbSnu{
-		// 初始化字段
 		dt:       new(DownloadTask),
+		dm:       downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 		pdfNames: make(map[string]string),
 	}
 }
@@ -145,7 +147,10 @@ func (r *KyudbSnu) do(imgUrls []string) (msg string, err error) {
 	fmt.Println()
 	referer := fmt.Sprintf("%s://%s/pf01/rendererImg.do", r.dt.UrlParsed.Scheme, r.dt.UrlParsed.Host)
 	size := len(imgUrls)
-	ctx := context.Background()
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    referer,
+	}
 	for i, uri := range imgUrls {
 		if !config.PageRange(i, size) {
 			continue
@@ -157,27 +162,16 @@ func (r *KyudbSnu) do(imgUrls []string) (msg string, err error) {
 		sortId := fmt.Sprintf("%04d", i+1)
 		log.Printf("Get %d/%d page, URL: %s\n", i+1, len(imgUrls), uri)
 		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-				"Referer":    referer,
-			},
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
+			continue
 		}
-		_, err = gohttp.FastGet(ctx, uri, opts)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
+		r.dm.AddFromLegacy(uri, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	fmt.Println()
-	return "", err
+	return "", nil
 }
 
 func (r *KyudbSnu) doPdf(imgUrls []string) (msg string, err error) {
@@ -187,8 +181,10 @@ func (r *KyudbSnu) doPdf(imgUrls []string) (msg string, err error) {
 	fmt.Println()
 	referer := url.QueryEscape(r.dt.Url)
 	size := len(imgUrls)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    referer,
+	}
 	for i, uri := range imgUrls {
 		if uri == "" || !config.PageRange(i, size) {
 			continue
@@ -204,30 +200,13 @@ func (r *KyudbSnu) doPdf(imgUrls []string) (msg string, err error) {
 		}
 		imgUrl := uri
 		log.Printf("Get %d/%d, URL: %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-					"Referer":    referer,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			util.PrintSleepTime(config.Conf.Sleep)
-			fmt.Println()
-		})
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.dt.SavePath, filename, config.Conf.Threads, r.dt.Jar, true)
 	}
-	wg.Wait()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	fmt.Println()
-	return "", err
+	return "", nil
 }
 
 func (r *KyudbSnu) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {

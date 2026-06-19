@@ -2,8 +2,8 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"errors"
 	"fmt"
@@ -15,17 +15,18 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type Nomfoundation struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewNomfoundation() *Nomfoundation {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Nomfoundation{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -79,44 +80,28 @@ func (r *Nomfoundation) do(canvases []string) (msg string, err error) {
 	fmt.Println()
 	referer := r.dt.Url
 	size := len(canvases)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    referer,
+	}
 	for i, uri := range canvases {
 		if uri == "" || !config.PageRange(i, size) {
 			continue
 		}
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		imgUrl := uri
 		log.Printf("Get %d/%d, URL: %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-					"Referer":    referer,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			util.PrintSleepTime(config.Conf.Sleep)
-			fmt.Println()
-		})
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
 	}
-	wg.Wait()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	fmt.Println()
-	return "", err
+	return "", nil
 }
 
 func (r *Nomfoundation) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {

@@ -20,16 +20,20 @@ import (
 
 type IIIF struct {
 	dt         *DownloadTask
+	dm         *downloader.DownloadManager
 	xmlContent []byte
 	ctx        context.Context
+	cancel     context.CancelFunc
 	bookId     string
 }
 
 func NewIiifRouter() *IIIF {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &IIIF{
-		// 初始化字段
-		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dt:     new(DownloadTask),
+		dm:     downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
@@ -60,6 +64,10 @@ func (i *IIIF) InitWithId(iTask int, sUrl string, id string) (msg string, err er
 	i.dt.Index = iTask
 	i.dt.Jar, _ = cookiejar.New(nil)
 	i.dt.BookId = id
+	if i.dm == nil {
+		i.ctx, i.cancel = context.WithCancel(context.Background())
+		i.dm = downloader.NewDownloadManager(i.ctx, i.cancel, config.Conf.MaxConcurrent)
+	}
 	return i.download()
 }
 
@@ -232,7 +240,9 @@ func (i *IIIF) doNormal(imgUrls []string) bool {
 	}
 	size := len(imgUrls)
 	fmt.Println()
-	ctx := context.Background()
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+	}
 	for k, uri := range imgUrls {
 		if uri == "" || !config.PageRange(k, size) {
 			continue
@@ -240,27 +250,14 @@ func (i *IIIF) doNormal(imgUrls []string) bool {
 		ext := util.FileExt(uri)
 		sortId := fmt.Sprintf("%04d", k+1)
 		filename := sortId + ext
-		dest := filepath.Join(i.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(filepath.Join(i.dt.SavePath, filename)) {
 			continue
 		}
 		log.Printf("Get %d/%d  %s\n", k+1, size, uri)
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   i.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-			},
-		}
-		_, err := gohttp.FastGet(ctx, uri, opts)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println()
+		i.dm.AddFromLegacy(uri, "GET", headers, nil, i.dt.SavePath, filename, 1, i.dt.Jar, true)
+	}
+	if len(i.dm.Tasks()) > 0 {
+		i.dm.Start()
 	}
 	return true
 }

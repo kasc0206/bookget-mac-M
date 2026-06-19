@@ -15,19 +15,20 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 type Keio struct {
 	dt  *DownloadTask
+	dm  *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewKeio() *Keio {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Keio{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -208,8 +209,9 @@ func (r *Keio) doNormal(imgUrls []string) bool {
 	}
 	fmt.Println()
 	size := len(imgUrls)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+	}
 	for i, dUrl := range imgUrls {
 		if dUrl == "" || !config.PageRange(i, size) {
 			continue
@@ -217,31 +219,16 @@ func (r *Keio) doNormal(imgUrls []string) bool {
 		ext := util.FileExt(dUrl)
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		imgUrl := dUrl
 		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-		})
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
 	}
-	wg.Wait()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return true
 }
 

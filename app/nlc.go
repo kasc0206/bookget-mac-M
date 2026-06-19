@@ -18,7 +18,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type ChinaNlc struct {
@@ -306,43 +305,28 @@ func (r *ChinaNlc) do(imgUrls []string) (msg string, err error) {
 	fmt.Println()
 	referer := url.QueryEscape(r.rawUrl)
 	size := len(imgUrls)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    referer,
+	}
 	for i, uri := range imgUrls {
 		if uri == "" || !config.PageRange(i, size) {
 			continue
 		}
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.savePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.savePath, filename)) {
 			continue
 		}
 		imgUrl := uri
 		log.Printf("Get %d/%d, URL: %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-					"Referer":    referer,
-				},
-			}
-			gohttp.FastGet(r.ctx, imgUrl, opts)
-			util.PrintSleepTime(config.Conf.Sleep)
-			fmt.Println()
-		})
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.savePath, filename, 1, r.jar, true)
 	}
-	wg.Wait()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	fmt.Println()
-	return "", err
+	return "", nil
 }
 
 func (r *ChinaNlc) downloadForPDFs() error {
@@ -453,31 +437,22 @@ func (r *ChinaNlc) doPdfUrl(sUrl, filename string) error {
 	pdfUrl := fmt.Sprintf("%s://%s/menhu/OutOpenBook/getReaderNew?aid=%s&bid=%s&kime=%s&fime=%s",
 		r.parsedUrl.Scheme, r.parsedUrl.Host, v.Get("aid"), v.Get("bid"), timeKey, timeFlag)
 
-	opts := gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: 1,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		CookieJar:   r.jar,
-		Headers: map[string]interface{}{
-			"User-Agent": config.Conf.UserAgent,
-			"Referer":    "http://read.nlc.cn/static/webpdf/lib/WebPDFJRWorker.js",
-			"Range":      "bytes=0-1",
-			"myreader":   tokenKey,
-		},
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    "http://read.nlc.cn/static/webpdf/lib/WebPDFJRWorker.js",
+		"Range":      "bytes=0-1",
+		"myreader":   tokenKey,
 	}
-	resp, err := gohttp.FastGet(r.ctx, pdfUrl, opts)
-	if err != nil || resp.GetStatusCode() != 200 {
-		fmt.Println(err)
-		return err
+	r.dm.AddFromLegacy(pdfUrl, "GET", headers, nil, r.savePath, filename, 1, r.jar, false)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	if err := r.renamePDFIfNeeded(dest, sUrl, filename); err != nil {
 		return err
 	}
 	util.PrintSleepTime(config.Conf.Sleep)
 	fmt.Println()
-	return err
+	return nil
 }
 
 func (r *ChinaNlc) getCanvases() (canvases []string, err error) {
