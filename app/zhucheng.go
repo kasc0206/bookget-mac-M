@@ -2,7 +2,7 @@ package app
 
 import (
 	"bookget/config"
-	"bookget/pkg/gohttp"
+	"bookget/pkg/downloader"
 	"bookget/pkg/util"
 	"context"
 	"errors"
@@ -13,17 +13,18 @@ import (
 	"path"
 	"regexp"
 	"strconv"
-	"sync"
 )
 
 type ZhuCheng struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewZhuCheng() *ZhuCheng {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &ZhuCheng{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -89,9 +90,6 @@ func (r *ZhuCheng) do(imgUrls []string) (msg string, err error) {
 		return
 	}
 	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
 	for i, uri := range imgUrls {
 		if uri == "" || !config.PageRange(i, size) {
 			continue
@@ -99,35 +97,20 @@ func (r *ZhuCheng) do(imgUrls []string) (msg string, err error) {
 		ext := util.FileExt(uri)
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		imgUrl := uri
-		fmt.Println()
 		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
+		headers := map[string]string{
+			"User-Agent": config.Conf.UserAgent,
+		}
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
 	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return "", nil
 }
 
 func (r *ZhuCheng) getVolumes(bookId string, jar *cookiejar.Jar) (volumes []string, err error) {

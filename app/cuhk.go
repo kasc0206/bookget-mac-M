@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/cuhk"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/progressbar"
 	"bookget/pkg/sharedmemory"
@@ -23,6 +24,7 @@ import (
 )
 
 type Cuhk struct {
+	dm     *downloader.DownloadManager
 	ctx    context.Context
 	cancel context.CancelFunc
 	client *http.Client
@@ -42,10 +44,12 @@ type Cuhk struct {
 
 func NewCuhk() *Cuhk {
 	ctx, cancel := context.WithCancel(context.Background())
+	dm := downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent)
 
 	client, _ := NewHttpClient()
 	return &Cuhk{
 		// 初始化字段
+		dm:     dm,
 		client: client,
 		ctx:    ctx,
 		cancel: cancel,

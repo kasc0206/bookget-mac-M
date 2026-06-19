@@ -2,26 +2,26 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/progressbar"
 	"context"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path/filepath"
 	"regexp"
 )
 
 type Idp struct {
-	dt  *DownloadTask
-	bar *progressbar.ProgressBar
+	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewIdp() *Idp {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Idp{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -62,31 +62,14 @@ func (r *Idp) download() (msg string, err error) {
 	}
 	//不按卷下载，所有图片存一个目录
 	r.dt.SavePath = config.Conf.Directory
-	sizeCanvases := len(canvases)
-	fmt.Println()
+
 	ext := ".jpg"
-	r.bar = progressbar.Default(int64(sizeCanvases), "downloading")
-	ctx := context.Background()
-	for i, imgUrl := range canvases {
-		if !config.PageRange(i, sizeCanvases) || imgUrl == "" {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		dest := filepath.Join(r.dt.SavePath, sortId+ext)
-		cli := gohttp.NewClient(ctx, gohttp.Options{
-			DestFile:   dest,
-			CookieJar:  r.dt.Jar,
-			CookieFile: config.Conf.CookieFile,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-			},
-		})
-		_, err = cli.Get(imgUrl)
-		if err != nil {
-			log.Println(err)
-			break
-		}
-		r.bar.Add(1)
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+	}
+	r.dm.AddImageTasks(canvases, r.dt.SavePath, ext, 0, headers, r.dt.Jar, true)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }

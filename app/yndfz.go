@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/yndfz"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
@@ -17,12 +18,14 @@ import (
 
 type Yndfz struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewYndfz() *Yndfz {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Yndfz{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -84,10 +87,8 @@ func (r *Yndfz) do(imgUrls []string) (msg string, err error) {
 	if imgUrls == nil {
 		return
 	}
-	fmt.Println()
 	referer := url.QueryEscape(r.dt.Url)
 	size := len(imgUrls)
-	ctx := context.Background()
 	for i, uri := range imgUrls {
 		if !config.PageRange(i, size) {
 			continue
@@ -97,38 +98,27 @@ func (r *Yndfz) do(imgUrls []string) (msg string, err error) {
 		}
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		log.Printf("Get %d/%d page, URL: %s\n", i+1, size, uri)
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-				"Referer":    referer,
-			},
-		}
 
 		imgUrl, err := r.getDownloadUrl(uri)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
-		_, err = gohttp.FastGet(ctx, imgUrl, opts)
-		if err != nil {
-			fmt.Println(err)
-			util.PrintSleepTime(config.Conf.Sleep)
+		headers := map[string]string{
+			"User-Agent": config.Conf.UserAgent,
+			"Referer":    referer,
 		}
-		fmt.Println()
+		r.dm.AddFromLegacy(imgUrl, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
+		util.PrintSleepTime(config.Conf.Sleep)
 	}
-	fmt.Println()
-	return "", err
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return "", nil
 }
 
 func (r *Yndfz) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
