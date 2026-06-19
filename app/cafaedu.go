@@ -14,7 +14,6 @@ import (
 	"path"
 	"regexp"
 	"sort"
-	"sync"
 )
 
 type CafaEduResponse struct {
@@ -50,15 +49,17 @@ type CafaEduItem struct {
 
 type CafaEdu struct {
 	dt        *DownloadTask
+	dm        *downloader.DownloadManager
 	ServerUrl string
 	ctx       context.Context
 }
 
 func NewCafaEdu() *CafaEdu {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &CafaEdu{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -116,18 +117,16 @@ func (r *CafaEdu) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(canvases))
-		r.do(canvases)
+		if config.Conf.UseDzi {
+			r.doDezoomify(canvases)
+		} else {
+			r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+		}
+	}
+	if !config.Conf.UseDzi && len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
-}
-
-func (r *CafaEdu) do(imgUrls []string) (msg string, err error) {
-	if config.Conf.UseDzi {
-		r.doDezoomify(imgUrls)
-	} else {
-		r.doNormal(imgUrls)
-	}
-	return "", err
 }
 
 func (r *CafaEdu) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
@@ -234,48 +233,4 @@ func (r *CafaEdu) doDezoomify(iiifUrls []string) bool {
 	return true
 }
 
-func (r *CafaEdu) doNormal(imgUrls []string) bool {
-	if imgUrls == nil {
-		return false
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		ext := util.FileExt(uri)
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		fmt.Println()
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return true
-}
+

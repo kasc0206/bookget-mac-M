@@ -4,7 +4,7 @@ import (
 	"bookget/config"
 	"bookget/model/sdutcm"
 	"bookget/pkg/crypt"
-	"bookget/pkg/gohttp"
+	"bookget/pkg/downloader"
 	"bookget/pkg/util"
 	"context"
 	"encoding/json"
@@ -19,14 +19,16 @@ import (
 
 type Sdutcm struct {
 	dt    *DownloadTask
+	dm    *downloader.DownloadManager
 	token string
 	body  []byte
 }
 
 func NewSdutcm() *Sdutcm {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Sdutcm{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -88,18 +90,15 @@ func (r *Sdutcm) download() (msg string, err error) {
 }
 
 func (r *Sdutcm) do(imgUrls []string) (msg string, err error) {
-	fmt.Println()
 	referer := r.dt.Url
 	size := len(imgUrls)
-	ctx := context.Background()
 	for i, uri := range imgUrls {
 		if uri == "" || !config.PageRange(i, size) {
 			continue
 		}
 		sortId := fmt.Sprintf("%04d", i+1)
 		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		log.Printf("Get %d/%d,  URL: %s\n", i+1, size, uri)
@@ -115,29 +114,16 @@ func (r *Sdutcm) do(imgUrls []string) (msg string, err error) {
 		csPath := crypt.EncodeURI(respBody.Url)
 		pdfUrl := "https://" + r.dt.UrlParsed.Host + "/getencryptFtpPdf.jspx?fileName=" + csPath + r.token
 
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-				"Referer":    referer,
-			},
+		headers := map[string]string{
+			"User-Agent": config.Conf.UserAgent,
+			"Referer":    referer,
 		}
-		for k := 0; k < 10; k++ {
-			resp, err := gohttp.FastGet(ctx, pdfUrl, opts)
-			if err == nil && resp.GetStatusCode() == 200 {
-				break
-			}
-			WaitNewCookieWithMsg(uri)
-		}
+		r.dm.AddFromLegacy(pdfUrl, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
 		util.PrintSleepTime(config.Conf.Sleep)
-		fmt.Println()
 	}
-	fmt.Println()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return "", err
 }
 

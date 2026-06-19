@@ -2,7 +2,7 @@ package app
 
 import (
 	"bookget/config"
-	"bookget/pkg/gohttp"
+	"bookget/pkg/downloader"
 	"context"
 	"fmt"
 	"log"
@@ -14,13 +14,15 @@ import (
 
 type Nationaljp struct {
 	dt    *DownloadTask
+	dm    *downloader.DownloadManager
 	extId string
 }
 
 func NewNationaljp() *Nationaljp {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Nationaljp{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -72,31 +74,19 @@ func (r *Nationaljp) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %s\n", i+1, len(respVolume), r.extId)
-		r.do(i+1, vol, dest)
-		fmt.Println()
-	}
-	return msg, err
-}
-
-func (r *Nationaljp) do(index int, id, dest string) (msg string, err error) {
-	apiUrl := "https://" + r.dt.UrlParsed.Host + "/acv/auto_conversion/download"
-	data := fmt.Sprintf("DL_TYPE=%s&id_%d=%s", r.extId, index, id)
-	ctx := context.Background()
-	opts := gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: 1,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		CookieJar:   r.dt.Jar,
-		Headers: map[string]interface{}{
+		apiUrl := "https://" + r.dt.UrlParsed.Host + "/acv/auto_conversion/download"
+		data := fmt.Sprintf("DL_TYPE=%s&id_%d=%s", r.extId, i+1, vol)
+		headers := map[string]string{
 			"User-Agent":   config.Conf.UserAgent,
 			"Content-Type": "application/x-www-form-urlencoded",
-		},
-		Body: []byte(data),
+		}
+		r.dm.AddFromLegacy(apiUrl, "POST", headers, []byte(data), r.dt.SavePath, fileName, 1, r.dt.Jar, false)
+		fmt.Println()
 	}
-	_, err = gohttp.Post(ctx, apiUrl, opts)
-	return "", err
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return msg, err
 }
 
 func (r *Nationaljp) getVolumes() (volumes []string, err error) {

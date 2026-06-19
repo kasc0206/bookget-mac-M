@@ -5,7 +5,6 @@ import (
 	"bookget/model/iiif"
 	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,19 +13,20 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"sync"
 )
 
 type Ryukoku struct {
 	dt  *DownloadTask
+	dm  *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewRyukoku() *Ryukoku {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Ryukoku{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -80,16 +80,14 @@ func (r *Ryukoku) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, len(respVolume), len(canvases))
-		r.do(canvases)
+		if config.Conf.UseDzi {
+			r.doDezoomify(canvases)
+		} else {
+			r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+		}
 	}
-	return "", nil
-}
-
-func (r *Ryukoku) do(imgUrls []string) (msg string, err error) {
-	if config.Conf.UseDzi {
-		r.doDezoomify(imgUrls)
-	} else {
-		r.doNormal(imgUrls)
+	if !config.Conf.UseDzi && len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }
@@ -118,54 +116,6 @@ func (r *Ryukoku) doDezoomify(iiifUrls []string) bool {
 		log.Printf("Get %d/%d  %s\n", i+1, size, uri)
 		iiifDownloader.Dezoomify(r.ctx, uri, dest, args)
 	}
-	return true
-}
-
-func (r *Ryukoku) doNormal(imgUrls []string) bool {
-	if imgUrls == nil {
-		return false
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		ext := util.FileExt(uri)
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			_, err := gohttp.FastGet(ctx, imgUrl, opts)
-			if err != nil {
-				fmt.Println(err)
-			}
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
 	return true
 }
 

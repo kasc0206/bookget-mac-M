@@ -3,8 +3,8 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/tianyige"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	xhash "bookget/pkg/hash"
 	"bookget/pkg/util"
 	"bytes"
 	"context"
@@ -23,7 +23,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/andreburgaud/crypt2go/ecb"
@@ -38,6 +37,7 @@ const TIANYIGE_KEY = "G3HT5CX8FTG5GWGUUJX8B5SWJTXS1KRC"
 
 type Tianyige struct {
 	dt           *DownloadTask
+	dm           *downloader.DownloadManager
 	index        int
 	localStorage struct {
 		authorization  string
@@ -46,9 +46,10 @@ type Tianyige struct {
 }
 
 func NewTianyige() *Tianyige {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Tianyige{
-		// 初始化字段
 		dt:    new(DownloadTask),
+		dm:    downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 		index: 0,
 	}
 }
@@ -131,9 +132,6 @@ func (r *Tianyige) do(records []tianyige.ImageRecord) (msg string, err error) {
 		return "", nil
 	}
 	size := len(records)
-	fmt.Println()
-	var wg sync.WaitGroup
-	idDict := make(map[string]string, 1000)
 	i := 0
 	for _, record := range records {
 		uri, _, err := r.getImageById(record.ImageId)
@@ -144,48 +142,16 @@ func (r *Tianyige) do(records []tianyige.ImageRecord) (msg string, err error) {
 		r.index++
 		sortId := fmt.Sprintf("%04d", i)
 		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
+		if FileExist(path.Join(r.dt.SavePath, filename)) {
 			continue
 		}
 		log.Printf("Get %d/%d  %s\n", i, size, uri)
-		//下载时有验证码
-		ctx := context.Background()
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-			},
-		}
-		for k := 0; k < 10; k++ {
-			_, err = gohttp.FastGet(ctx, uri, opts)
-			if err == nil && FileExist(dest) {
-				break
-			}
-			WaitNewCookieWithMsg(uri)
-		}
-
-		bs, _ := os.ReadFile(dest)
-		mh := xhash.NewMultiHasher()
-		_, _ = io.Copy(mh, bytes.NewBuffer(bs))
-		kId, _ := mh.SumString(xhash.MD5, false)
-		_, ok := idDict[kId]
-		if ok {
-			fmt.Println()
-			continue
-		} else {
-			idDict[kId] = uri
-		}
+		r.dm.AddFromLegacy(uri, "GET", nil, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
 		util.PrintSleepTime(config.Conf.Sleep)
-		fmt.Println()
 	}
-	wg.Wait()
-	fmt.Println()
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return "", err
 }
 

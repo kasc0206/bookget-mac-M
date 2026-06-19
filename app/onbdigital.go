@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/onbdigital"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
@@ -10,19 +11,19 @@ import (
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
-	"sync"
 )
 
 type OnbDigital struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewOnbDigital() *OnbDigital {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &OnbDigital{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -70,54 +71,12 @@ func (r *OnbDigital) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, len(respVolume), len(canvases))
-		r.do(canvases)
+		r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return msg, err
-}
-
-func (r *OnbDigital) do(imgUrls []string) (msg string, err error) {
-	if imgUrls == nil {
-		return "", nil
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		fmt.Println()
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
 }
 
 func (r *OnbDigital) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {

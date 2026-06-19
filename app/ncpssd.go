@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
@@ -10,19 +11,20 @@ import (
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
 
 type Ncpssd struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewNcpssd() *Ncpssd {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Ncpssd{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -70,36 +72,25 @@ func (r *Ncpssd) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %s \n", i+1, len(respVolume), vol)
-		r.do(vol)
-		util.PrintSleepTime(config.Conf.Sleep)
-		fmt.Println()
-	}
-	return msg, err
-}
-
-func (r *Ncpssd) do(pdfUrl string) (msg string, err error) {
-	token, _ := r.getToken()
-	ext := util.FileExt(pdfUrl)
-	dest := filepath.Join(r.dt.SavePath, r.dt.BookId+ext)
-	jar, _ := cookiejar.New(nil)
-	ctx := context.Background()
-	referer := "https://" + r.dt.UrlParsed.Host
-	gohttp.FastGet(ctx, pdfUrl, gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: 1,
-		CookieJar:   jar,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		Headers: map[string]interface{}{
-			"user-agent": config.Conf.UserAgent,
+		token, _ := r.getToken()
+		ext := util.FileExt(vol)
+		filename := r.dt.BookId + ext
+		referer := "https://" + r.dt.UrlParsed.Host
+		headers := map[string]string{
+			"User-Agent": config.Conf.UserAgent,
 			"Referer":    referer,
 			"Origin":     referer,
 			"site":       "npssd",
 			"sign":       token,
-		},
-	})
-	return "", err
+		}
+		r.dm.AddFromLegacy(vol, "GET", headers, nil, r.dt.SavePath, filename, 1, r.dt.Jar, true)
+		util.PrintSleepTime(config.Conf.Sleep)
+		fmt.Println()
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return msg, err
 }
 
 func (r *Ncpssd) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
