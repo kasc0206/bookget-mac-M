@@ -7,7 +7,6 @@ import (
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -65,7 +64,7 @@ func (r *Khirin) getBookId(sUrl string) (bookId string) {
 }
 
 func (r *Khirin) download() (msg string, err error) {
-	log.Printf("Get %s  %s\n", r.dt.Url)
+	log.Printf("Get %s\n", r.dt.Url)
 	r.dt.SavePath = config.Conf.Directory
 	manifestUrl, err := r.getManifestUrl(r.dt.Url)
 	if err != nil {
@@ -164,8 +163,7 @@ func (r *Khirin) doNormal(canvases []string) bool {
 }
 
 func (r *Khirin) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Khirin")
 }
 
 func (r *Khirin) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
@@ -233,7 +231,7 @@ func (r *Khirin) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

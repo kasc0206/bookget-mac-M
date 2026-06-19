@@ -1,23 +1,15 @@
-name: Release bookget
+name: Build bookget for macOS Apple Silicon
 
 on:
+  pull_request:
   push:
+    branches: [ "main" ]
     tags: [ "v*" ]
-jobs:
-  build:
-    strategy:
-      matrix:
-        platform:
-          - linux-amd64
-          - linux-arm64
-          - darwin-amd64
-          - darwin-arm64
-          - windows-amd64
-    runs-on: ${{
-      contains(matrix.platform, 'linux') && 'ubuntu-latest' ||
-      contains(matrix.platform, 'darwin') && 'macos-latest' ||
-      'windows-latest'}}
+  workflow_dispatch:
 
+jobs:
+  test:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,13 +19,23 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Install Make (Windows)
-        if: runner.os == 'Windows'
-        run: choco install make -y
+      - name: Run tests
+        run: go test ./...
 
-      - name: Build
-        run: |
-          make ${{ matrix.platform }}
+  build-macos-arm64:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Build macOS Apple Silicon package
+        run: make package-macos-arm64
 
       - name: Verify artifacts
         run: ls -R dist/
@@ -41,14 +43,17 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: bookget-${{ matrix.platform }}
-          path: dist/${{ matrix.platform }}/*
+          name: bookget-macos-arm64
+          path: |
+            dist/darwin-arm64/bookget-macos-arm64
+            dist/bookget-macos-arm64.tar.gz
 
   release:
-    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-macos-arm64
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 必须添加这个权限
+      contents: write
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -61,16 +66,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ secrets.RELEASE_TOKEN }}  # 替换默认的GITHUB_TOKEN
           tag_name: ${{ github.ref_name }}
           name: "bookget ${{ github.ref_name }}"
-          body: "|
-🚀 Automated release by **github-actions[bot]**   
-      
-**Assets:**   
-- Linux: `bookget-linux` / `bookget-linux-arm64`   
-- Windows: `bookget.exe`   
-- MacOS: `bookget-macos` / `bookget-macos-arm64`   
-      "
+          body: |
+            Automated release for macOS Apple Silicon.
+
+            Asset:
+            - `bookget-macos-arm64.tar.gz`
           files: |
-            dist/**/bookget*
+            dist/**/bookget-macos-arm64*

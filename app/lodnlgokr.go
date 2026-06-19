@@ -206,7 +206,7 @@ func (r *LodNLGoKr) getVolumeUrls() (volumes []Volume, err error) {
 func (r *LodNLGoKr) getCanvasesByUrl(volId int, sUrl string) ([]string, error) {
 	//loadVol('CNTS-00047981911',1,'/wonmun5/data4/imagedb/ncldb7/KOL000021672',155,'26');
 	matches := regexp.MustCompile(`loadVol\(([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)\);`).FindAllStringSubmatch(r.bufBody, -1)
-	if matches == nil || len(matches) == 0 {
+	if len(matches) == 0 {
 		return nil, errors.New("[getCanvases] not found")
 	}
 	var maxPage = 0

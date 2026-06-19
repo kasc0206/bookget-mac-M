@@ -7,7 +7,6 @@ import (
 	"bookget/pkg/util"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -76,7 +75,7 @@ func getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

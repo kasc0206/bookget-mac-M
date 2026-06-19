@@ -6,7 +6,6 @@ import (
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -165,12 +164,11 @@ func (r *OnbDigital) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }
 
 func (r *OnbDigital) postBody(sUrl string, d []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for OnbDigital")
 }

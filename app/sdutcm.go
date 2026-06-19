@@ -140,9 +140,6 @@ func (r *Sdutcm) do(imgUrls []string) (msg string, err error) {
 
 func (r *Sdutcm) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	ancientVolume := r.getVolumeId(r.body)
-	if err != nil {
-		return nil, err
-	}
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/sdutcm/ancient/book/getVolume.jspx?lshh=" + ancientVolume
 	bs, err := getBody(apiUrl, jar)
 	var respBody sdutcm.VolumeList

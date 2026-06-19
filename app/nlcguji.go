@@ -83,12 +83,12 @@ func (s *NlcGuji) getBookId() (bookId string) {
 	)
 
 	// 优先尝试匹配 metadataId
-	if matches := metadataIdRe.FindStringSubmatch(s.rawUrl); matches != nil && len(matches) > 1 {
+	if matches := metadataIdRe.FindStringSubmatch(s.rawUrl); len(matches) > 1 {
 		return matches[1]
 	}
 
 	// 然后尝试匹配 id
-	if matches := idRe.FindStringSubmatch(s.rawUrl); matches != nil && len(matches) > 1 {
+	if matches := idRe.FindStringSubmatch(s.rawUrl); len(matches) > 1 {
 		return matches[1]
 	}
 
@@ -106,14 +106,8 @@ func (s *NlcGuji) Run() (msg string, err error) {
 	s.buildCatalog(filepath.Join(s.savePath, "catalog.txt"))
 
 	groupedVolumes, err := s.getVolumes()
-	if err != nil || groupedVolumes == nil {
+	if groupedVolumes == nil {
 		return "[err=getVolumes]", err
-
-	}
-
-	if err != nil {
-		fmt.Println(err)
-		return "getVolumes", err
 	}
 
 	var i = 0

@@ -116,8 +116,7 @@ func (r Hathitrust) do(imgUrls []string) (msg string, err error) {
 }
 
 func (r Hathitrust) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Hathitrust")
 }
 
 func (r Hathitrust) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {

@@ -71,22 +71,24 @@ var hashTestSet = []hashTest{
 	{
 		input: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
 		output: map[hash.Type]string{
-			hash.MD5:       "bf13fc19e5151ac57d4252e0e0f87abe",
-			hash.SHA1:      "3ab6543c08a75f292a5ecedac87ec41642d12166",
-			hash.Whirlpool: "eddf52133d4566d763f716e853d6e4efbabd29e2c2e63f56747b1596172851d34c2df9944beb6640dbdbe3d9b4eb61180720a79e3d15baff31c91e43d63869a4",
-			hash.CRC32:     "a6041d7e",
-			hash.SHA256:    "c839e57675862af5c21bd0a15413c3ec579e0d5522dab600bc6c3489b05b8f54",
+			hash.MD5:          "bf13fc19e5151ac57d4252e0e0f87abe",
+			hash.SHA1:         "3ab6543c08a75f292a5ecedac87ec41642d12166",
+			hash.Whirlpool:    "eddf52133d4566d763f716e853d6e4efbabd29e2c2e63f56747b1596172851d34c2df9944beb6640dbdbe3d9b4eb61180720a79e3d15baff31c91e43d63869a4",
+			hash.CRC32:        "a6041d7e",
+			hash.SHA256:       "c839e57675862af5c21bd0a15413c3ec579e0d5522dab600bc6c3489b05b8f54",
+			hash.QuickXorHash: "0110c000085000031c0001095ec00218d0000700",
 		},
 	},
 	// Empty data set
 	{
 		input: []byte{},
 		output: map[hash.Type]string{
-			hash.MD5:       "d41d8cd98f00b204e9800998ecf8427e",
-			hash.SHA1:      "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-			hash.Whirlpool: "19fa61d75522a4669b44e39c1d2e1726c530232130d407f89afee0964997f7a73e83be698b288febcf88e3e03c4f0757ea8964e59b63d93708b138cc42a66eb3",
-			hash.CRC32:     "00000000",
-			hash.SHA256:    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			hash.MD5:          "d41d8cd98f00b204e9800998ecf8427e",
+			hash.SHA1:         "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+			hash.Whirlpool:    "19fa61d75522a4669b44e39c1d2e1726c530232130d407f89afee0964997f7a73e83be698b288febcf88e3e03c4f0757ea8964e59b63d93708b138cc42a66eb3",
+			hash.CRC32:        "00000000",
+			hash.SHA256:       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			hash.QuickXorHash: "0000000000000000000000000000000000000000",
 		},
 	},
 }

@@ -1,89 +1,136 @@
-# ⚠️ Bookget Fork for macOS Apple Silicon
+# Bookget for macOS Apple Silicon
 
-## Fork Information
+This fork of [deweizhu/bookget](https://github.com/deweizhu/bookget) is maintained for MacBook and Mac desktop machines with Apple Silicon chips: M1, M2, M3, M4, and newer.
 
-This is a fork of [deweizhu/bookget](https://github.com/deweizhu/bookget) with enhancements for **macOS Apple Silicon (M-series) only**.
+The focus is a small, dependable command-line build for `darwin/arm64`, plus fork-specific filename improvements for several digital library downloaders.
 
-**Original Repository**: https://github.com/deweizhu/bookget  
-**License**: GPLv3 (same as original)
+## What This Fork Adds
 
-## Key Changes
+- macOS Apple Silicon build target: `make macos-arm64`
+- local install target: `make install-macos-arm64`
+- release package target: `make package-macos-arm64`
+- automatic, readable output names for selected sites
+- upstream updates through `deweizhu/bookget` main, including archive.org support and Chinese-path handling
 
-This fork introduces an **auto-naming framework** that replaces sequential numbered files with meaningful book titles and metadata. Major updates include:
+## Build On A MacBook M-Series
 
-1. **Generic Auto-Naming System** (`app/template.go`):
-   - `BuildOutputFileName()`: Creates readable filenames with deduplicated parts
-   - `ExtractHTMLTitle()`: Extracts titles from HTML meta tags
-   - `NormalizeNamePart()`: Handles HTML entities and whitespace
-
-2. **Enhanced Downloaders**:
-   - **NLC** (National Library of China): Adds publication time to filename
-   - **Wzlib**: Supports both new and old campuses with smart naming
-   - **Tokyo University**: HTML-based title extraction
-   - **Luoyang Library**: Metadata-enriched filenames
-   - **Guangzhou Library**: Dynamic title naming
-   - **Seoul National**: Improved header handling for compatibility
-
-3. **Real-World Validation**:
-   - ✓ Tested with actual library links
-   - ✓ Verified output filenames quality
-   - ✓ All 6 major sites working correctly
-
-## Platform Support
-
-### ✅ Supported
-- **macOS 11+** with Apple Silicon (M1, M2, M3, M4, etc.)
-- Binary: `dist/darwin-arm64/bookget-macos-arm64`
-
-### ❌ NOT Supported in This Fork
-- Intel Mac (use original repository)
-- Linux, Windows (use original repository)
-- Other architectures
-
-## Building from Source
+Install Go with Homebrew:
 
 ```bash
-# Install Go (v1.18+)
 brew install go
+```
 
-# Clone and build
-git clone https://github.com/kasc0206/bookget.git
-cd bookget
+Build the binary:
 
-# Build for macOS M-series
-go build -trimpath -ldflags "-s -w" -o dist/darwin-arm64/bookget-macos-arm64 ./cmd/
+```bash
+make macos-arm64
+```
+
+The binary is written to:
+
+```text
+dist/darwin-arm64/bookget-macos-arm64
+```
+
+Install it into `~/.local/bin/bookget`:
+
+```bash
+make install-macos-arm64
+```
+
+If `~/.local/bin` is not already on your PATH, add this to your shell profile:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then restart the terminal or run:
+
+```bash
+source ~/.zshrc
 ```
 
 ## Usage
 
+Download one URL:
+
 ```bash
-# Download from National Library of China
-./dist/darwin-arm64/bookget-macos-arm64 'https://www.nlc.cn/...'
-
-# Download from Wenzhou Library
-./dist/darwin-arm64/bookget-macos-arm64 'https://www.wzlib.cn/...'
-
-# See full documentation
-./dist/darwin-arm64/bookget-macos-arm64 --help
+bookget 'https://example.com/book/url'
 ```
 
-## Documentation
+Choose an output directory:
 
-- **Original Wiki**: https://github.com/deweizhu/bookget/wiki
-- **Our Changes**: See [CHANGELOG.md](CHANGELOG.md)
-- **Original Repo**: https://github.com/deweizhu/bookget
+```bash
+bookget -O "$HOME/Downloads/bookget" 'https://example.com/book/url'
+```
+
+Download a page range:
+
+```bash
+bookget -p 1:20 'https://example.com/book/url'
+```
+
+Use IIIF manifest mode:
+
+```bash
+bookget -m 2 'https://example.com/iiif/manifest.json'
+```
+
+Show all options:
+
+```bash
+bookget --help
+```
+
+## Release Package
+
+Create a tarball for GitHub Releases:
+
+```bash
+make package-macos-arm64
+```
+
+The package is written to:
+
+```text
+dist/bookget-macos-arm64.tar.gz
+```
+
+## Auto-Naming Enhancements
+
+This fork adds a shared filename helper in `app/template.go`:
+
+- `NormalizeNamePart`
+- `BuildOutputFileName`
+- `ExtractHTMLTitle`
+
+The helper is used by selected downloaders such as NLC, Wzlib, University of Tokyo, Luoyang Library, Guangzhou Library, and Seoul National University.
+
+## Platform Scope
+
+Supported by this fork:
+
+- macOS 11+ on Apple Silicon
+- Go 1.23.x
+- CLI usage from Terminal
+
+Not the focus of this fork:
+
+- Windows GUI builds
+- Intel Mac release artifacts
+- Linux release artifacts
+
+For those platforms, use the original project unless you plan to maintain the extra builds yourself.
+
+## Validation
+
+Run the local checks:
+
+```bash
+go test ./...
+make macos-arm64
+```
 
 ## License
 
-This fork maintains the **GPLv3 License** from the original project. All modifications are also under GPLv3.
-
-See [LICENSE](LICENSE) for details.
-
----
-
-### For Other Platforms
-
-This fork is **macOS M-series specific**. For other systems, please use the original repository:
-- **Original**: https://github.com/deweizhu/bookget
-- **Windows/Intel Mac/Linux**: Follow instructions at the original repository
-
+This fork keeps the original GPLv3 license. See `LICENSE`.

@@ -6,7 +6,6 @@ import (
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -232,7 +231,7 @@ func (r *Princeton) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

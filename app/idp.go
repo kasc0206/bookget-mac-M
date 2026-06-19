@@ -5,7 +5,6 @@ import (
 	"bookget/pkg/gohttp"
 	"bookget/pkg/progressbar"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -93,13 +92,11 @@ func (r *Idp) download() (msg string, err error) {
 }
 
 func (r *Idp) do(imgUrls []string) (msg string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return "", fmt.Errorf("do not implemented for Idp")
 }
 
 func (r *Idp) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Idp")
 }
 
 func (r *Idp) getCanvases(sUrl string, jar *cookiejar.Jar) ([]string, error) {
@@ -138,12 +135,11 @@ func (r *Idp) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }
 
 func (r *Idp) postBody(sUrl string, d []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for Idp")
 }

@@ -177,14 +177,13 @@ func (r *SzLib) getBody(sUrl string) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }
 
 func (r *SzLib) postBody(sUrl string, d []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for SzLib")
 }
 
 func (r *SzLib) getSinglePage(bookId string, volumeId string, page string) (string, error) {

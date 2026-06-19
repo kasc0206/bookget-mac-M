@@ -8,7 +8,6 @@ import (
 	"bookget/pkg/util"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -121,8 +120,7 @@ func (r DziCnLib) dezoomify() (msg string, err error) {
 }
 
 func (r DziCnLib) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for DziCnLib")
 }
 
 func (r DziCnLib) getCanvases(apiUrl string, jar *cookiejar.Jar) (map[int]string, error) {
@@ -200,7 +198,7 @@ func (r DziCnLib) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() == 202 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

@@ -5,7 +5,6 @@ import (
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -13,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -113,14 +113,13 @@ func (r *Berkeley) do(canvases []string) (msg string, err error) {
 }
 
 func (r *Berkeley) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Berkeley")
 }
 
 func (r *Berkeley) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
 
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/api/v1/file?recid=" + r.dt.BookId +
-		"&file_types=%5B%5D&hidden_types=%5B%22pdf%3Bpdfa%22%2C%22hocr%22%5D&ln=en&hr=1&_=" + string(time.Now().Unix())
+		"&file_types=%5B%5D&hidden_types=%5B%22pdf%3Bpdfa%22%2C%22hocr%22%5D&ln=en&hr=1&_=" + strconv.FormatInt(time.Now().Unix(), 10)
 	bs, err := r.getBody(apiUrl, jar)
 	if err != nil {
 		return
@@ -154,7 +153,7 @@ func (r *Berkeley) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

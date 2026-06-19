@@ -397,7 +397,6 @@ func (r *ChinaNlc) downloadForOCR() {
 		filename := vid + ".pdf"
 		r.doPdfUrl(vol, filename)
 	}
-	return
 }
 
 func (r *ChinaNlc) getVolumes() (volumes []string, err error) {
@@ -548,7 +547,7 @@ func (r *ChinaNlc) getBody(apiUrl string) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

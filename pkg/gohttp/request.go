@@ -360,5 +360,4 @@ func (r *Request) parseBody() {
 	if r.opts.Body != nil {
 		r.body = bytes.NewReader(r.opts.Body)
 	}
-	return
 }

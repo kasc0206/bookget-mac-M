@@ -173,13 +173,11 @@ func (r *ZhuCheng) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []stri
 }
 
 func (r *ZhuCheng) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getBody not implemented for ZhuCheng")
 }
 
 func (r *ZhuCheng) postBody(sUrl string, d []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for ZhuCheng")
 }
 
 func (r *ZhuCheng) getBid(bs []byte) (string, error) {

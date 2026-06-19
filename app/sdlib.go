@@ -84,7 +84,7 @@ func (r *Sdlib) getBookId(rawUrl string) (bookId string) {
 	)
 
 	// 然后尝试匹配 id
-	if matches := idRe.FindStringSubmatch(r.rawUrl); matches != nil && len(matches) > 1 {
+	if matches := idRe.FindStringSubmatch(r.rawUrl); len(matches) > 1 {
 		return matches[1]
 	}
 
@@ -153,12 +153,11 @@ func (r *Sdlib) do(canvases []string) (err error) {
 }
 
 func (r *Sdlib) getVolumes(rawUrl string) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Sdlib")
 }
 
 func (r *Sdlib) getCanvases(rawUrl string) (canvases []string, err error) {
-	apiUrl := fmt.Sprintf("http://%s/dev-api/ancientbooks/front/getFileContentPage/3/", r.parsedUrl.Host, r.bookId)
+	apiUrl := fmt.Sprintf("http://%s/dev-api/ancientbooks/front/getFileContentPage/3/%s", r.parsedUrl.Host, r.bookId)
 	r.bufBody, err = r.getBody(apiUrl)
 	if err != nil {
 		return nil, err
@@ -214,6 +213,5 @@ func (r *Sdlib) getBody(rawUrl string) ([]byte, error) {
 }
 
 func (r *Sdlib) postBody(rawUrl string, postData interface{}) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for Sdlib")
 }

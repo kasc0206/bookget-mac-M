@@ -109,6 +109,9 @@ func (d *Download) GetInfoOrDownload() (*Info, error) {
 	r := NewClient(d.ctx)
 	r.Request("GET", d.URL, d.opts)
 	_resp, err := r.cli.Do(r.req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
 	defer _resp.Body.Close()
 
 	info := &Info{}
@@ -243,10 +246,10 @@ func (d *Download) DownloadChunk(c *Chunk, dest io.Writer) error {
 	r.Request("GET", d.URL, d.opts)
 	d.mutex.Unlock()
 	resp, err := r.cli.Do(r.req)
-	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	// Verify the length
 	if resp.ContentLength != int64(c.End-c.Start+1) {
 		return fmt.Errorf(

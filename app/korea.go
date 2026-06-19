@@ -75,7 +75,7 @@ func (r *Korea) download() (msg string, err error) {
 			vid := fmt.Sprintf("%04d", i+1)
 			r.dt.SavePath = CreateDirectory(vid)
 		}
-		if err != nil || vol.Canvases == nil {
+		if vol.Canvases == nil {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(vol.Canvases))

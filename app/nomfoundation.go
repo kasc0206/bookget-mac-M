@@ -120,8 +120,7 @@ func (r *Nomfoundation) do(canvases []string) (msg string, err error) {
 }
 
 func (r *Nomfoundation) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for Nomfoundation")
 }
 
 func (r *Nomfoundation) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
@@ -170,7 +169,7 @@ func (r *Nomfoundation) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, erro
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

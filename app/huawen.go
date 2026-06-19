@@ -5,7 +5,6 @@ import (
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -51,8 +50,7 @@ func (r *Huawen) Run(sUrl string) (msg string, err error) {
 }
 
 func (r *Huawen) getBookId(sUrl string) (bookId string) {
-	//TODO implement me
-	panic("implement me")
+	return ""
 }
 
 func (r *Huawen) download() (msg string, err error) {
@@ -124,8 +122,7 @@ func (r *Huawen) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, 
 }
 
 func (r *Huawen) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getCanvases not implemented for Huawen")
 }
 
 func (r *Huawen) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
@@ -145,7 +142,7 @@ func (r *Huawen) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

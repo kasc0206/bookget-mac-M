@@ -7,7 +7,6 @@ import (
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -64,13 +63,10 @@ func (r *War1931) mkdirAll(directory, vid string) (dirPath string) {
 	switch r.docType {
 	case "ts":
 		r.dt.VolumeId = r.dt.UrlParsed.Host + "_" + r.dt.BookId + string(os.PathSeparator) + directory + "_vol." + vid
-		break
 	case "bz":
 		r.dt.VolumeId = r.dt.UrlParsed.Host + "_" + r.dt.BookId + string(os.PathSeparator) + directory
-		break
 	case "qk":
 		r.dt.VolumeId = r.dt.UrlParsed.Host + "_" + r.dt.BookId + string(os.PathSeparator) + directory + "_vol." + vid
-		break
 	default:
 	}
 	r.dt.SavePath = config.Conf.Directory + string(os.PathSeparator) + r.dt.VolumeId
@@ -157,13 +153,10 @@ func (r *War1931) getVolumes(apiUrl string, jar *cookiejar.Jar) (volumes []war.P
 			Volumes:   []string{jsonUrl},
 		}
 		volumes = append(volumes, partVol)
-		break
 	case "bz":
 		volumes, err = r.getVolumesForBz(jsonUrl, r.dt.Jar)
-		break
 	case "qk":
 		volumes, err = r.getVolumesForQk(jsonUrl, r.dt.Jar)
-		break
 	default:
 	}
 	return volumes, nil
@@ -334,7 +327,7 @@ func (r *War1931) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

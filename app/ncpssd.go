@@ -6,7 +6,6 @@ import (
 	"bookget/pkg/util"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -123,8 +122,7 @@ func (r *Ncpssd) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, 
 }
 
 func (r *Ncpssd) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getCanvases not implemented for Ncpssd")
 }
 
 func (r *Ncpssd) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
@@ -146,7 +144,7 @@ func (r *Ncpssd) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

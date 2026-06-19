@@ -154,8 +154,7 @@ func (r *Ouroots) getVolumes(catalogKey string) (ouroots.ResponseVolume, error) 
 }
 
 func (r *Ouroots) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getCanvases not implemented for Ouroots")
 }
 
 func (r *Ouroots) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
@@ -173,14 +172,13 @@ func (r *Ouroots) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }
 
 func (r *Ouroots) postBody(sUrl string, d []byte) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for Ouroots")
 }
 
 func (r *Ouroots) getToken() (string, error) {

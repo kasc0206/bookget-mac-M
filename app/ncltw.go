@@ -113,18 +113,15 @@ func (r *NlcTw) Run() (err error) {
 }
 
 func (r *NlcTw) do(canvases []string) (err error) {
-	//TODO implement me
-	panic("implement me")
+	return fmt.Errorf("do not implemented for NlcTw")
 }
 
 func (r *NlcTw) getVolumes(rawUrl string) (volumes []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getVolumes not implemented for NlcTw")
 }
 
 func (r *NlcTw) getCanvases(rawUrl string) (canvases []string, err error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("getCanvases not implemented for NlcTw")
 }
 
 func (r *NlcTw) getBody(rawUrl string) ([]byte, error) {

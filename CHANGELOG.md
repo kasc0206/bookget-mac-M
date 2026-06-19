@@ -4,6 +4,19 @@ This is a fork of [deweizhu/bookget](https://github.com/deweizhu/bookget) optimi
 
 ## Changes Made
 
+### 0. macOS Apple Silicon Release Flow
+- **Files**: `Makefile`, `.github/workflows/go.yml`, `README.md`, `README-FORK.md`
+- **Changes**:
+  - Added `make macos-arm64` for Apple Silicon builds
+  - Added `make install-macos-arm64` for local installation to `~/.local/bin/bookget`
+  - Added `make package-macos-arm64` for GitHub Release tarballs
+  - Updated CI to run tests and publish `bookget-macos-arm64.tar.gz`
+  - Reworked documentation around MacBook M-series usage
+- **Validation**:
+  - `go test ./...`
+  - `make package-macos-arm64`
+  - Verified output binary is `Mach-O 64-bit executable arm64`
+
 ### 1. Auto-Naming Framework (Generic Naming System)
 - **File**: `app/template.go` (new)
 - **Functions Added**:

@@ -87,12 +87,12 @@ func (r *Cuhk) getBookId() string {
 	)
 
 	// 优先尝试匹配 metadataId
-	if matches := IdRe.FindStringSubmatch(r.rawUrl); matches != nil && len(matches) > 1 {
+	if matches := IdRe.FindStringSubmatch(r.rawUrl); len(matches) > 1 {
 		return matches[1]
 	}
 
 	// 然后尝试匹配 id
-	if matches := IdRe2.FindStringSubmatch(r.rawUrl); matches != nil && len(matches) > 1 {
+	if matches := IdRe2.FindStringSubmatch(r.rawUrl); len(matches) > 1 {
 		return matches[1]
 	}
 
@@ -256,7 +256,7 @@ func (r *Cuhk) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() == 202 || bs == nil {
-		return nil, errors.New(fmt.Sprintf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase()))
+		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
 }

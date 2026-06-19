@@ -206,6 +206,5 @@ func (r *Berlin) getBody(rawUrl string) ([]byte, error) {
 }
 
 func (r *Berlin) postBody(rawUrl string, postData interface{}) ([]byte, error) {
-	//TODO implement me
-	panic("implement me")
+	return nil, fmt.Errorf("postBody not implemented for Berlin")
 }
