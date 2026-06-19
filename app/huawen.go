@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
@@ -9,19 +10,20 @@ import (
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
 )
 
 type Huawen struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewHuawen() *Huawen {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Huawen{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -61,45 +63,26 @@ func (r *Huawen) download() (msg string, err error) {
 		fmt.Println(err)
 		return "getVolumes", err
 	}
+	savePath := config.Conf.Directory
 	for i, vol := range respVolume {
 		if !config.VolumeRange(i) {
 			continue
 		}
-		r.dt.SavePath = config.Conf.Directory
 		log.Printf(" %d/%d PDFs \n", i+1, len(respVolume))
-		r.do(vol)
+		u, _ := url.Parse(vol)
+		headers := map[string]string{
+			"Referer": "https://" + r.dt.UrlParsed.Host + "/pdfjs/web/viewer.html?file=" + u.Path,
+		}
+		filename := util.FileName(vol)
+		r.dm.AddFromLegacy(vol, "GET", headers, nil, savePath, filename, 1, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }
 
-func (r *Huawen) do(pdfUrl string) (msg string, err error) {
-	filename := util.FileName(pdfUrl)
-	dest := path.Join(r.dt.SavePath, filename)
-	if FileExist(dest) {
-		return "", nil
-	}
-	u, _ := url.Parse(pdfUrl)
-	ctx := context.Background()
-	opts := gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: 1,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		CookieJar:   r.dt.Jar,
-		Headers: map[string]interface{}{
-			"User-Agent": config.Conf.UserAgent,
-			"Referer":    "https://" + r.dt.UrlParsed.Host + "/pdfjs/web/viewer.html?file=" + u.Path,
-		},
-	}
-	_, err = gohttp.FastGet(ctx, pdfUrl, opts)
-	if err != nil {
-		fmt.Println(err)
-	}
-	util.PrintSleepTime(config.Conf.Sleep)
-	fmt.Println()
-	return "", nil
-}
+
 
 func (r *Huawen) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	bs, err := r.getBody(sUrl, jar)

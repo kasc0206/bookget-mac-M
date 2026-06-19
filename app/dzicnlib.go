@@ -24,6 +24,7 @@ import (
 
 type DziCnLib struct {
 	dt        *DownloadTask
+	dm        *downloader.DownloadManager
 	ServerUrl string
 	Extention string
 	ctx       context.Context
@@ -32,10 +33,11 @@ type DziCnLib struct {
 }
 
 func NewDziCnLib() *DziCnLib {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &DziCnLib{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 

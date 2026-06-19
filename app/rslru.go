@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/rslru"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
@@ -11,22 +12,20 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"os"
-	"path"
 	"regexp"
-	"strconv"
-	"sync"
 )
 
 type RslRu struct {
 	dt       *DownloadTask
+	dm       *downloader.DownloadManager
 	response *rslru.Response
 }
 
 func NewRslRu() *RslRu {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &RslRu{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -73,57 +72,14 @@ func (r *RslRu) download() (msg string, err error) {
 		return "requested URL was not found.", err
 	}
 	log.Printf(" %d pages \n", len(canvases))
-	return r.do(canvases)
+	r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return "", nil
 }
 
-func (r *RslRu) do(canvases []string) (msg string, err error) {
-	if canvases == nil {
-		return
-	}
-	fmt.Println()
-	//referer := r.dt.Url
-	size := len(canvases)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range canvases {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		log.Printf("Get %d/%d page, URL: %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			cli := gohttp.NewClient(ctx, gohttp.Options{
-				CookieFile: config.Conf.CookieFile,
-				CookieJar:  nil,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			})
-			resp, err := cli.Get(imgUrl)
-			if err != nil {
-				return
-			}
-			bs, _ := resp.GetBody()
-			length, _ := strconv.Atoi(resp.GetHeaderLine("Content-Length"))
-			if bs == nil || length != len(bs) {
-				return
-			}
-			os.WriteFile(dest, bs, os.ModePerm)
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
-}
+
 
 func (r *RslRu) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for RslRu")

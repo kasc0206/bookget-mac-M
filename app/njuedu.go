@@ -19,15 +19,17 @@ import (
 
 type Njuedu struct {
 	dt     *DownloadTask
+	dm     *downloader.DownloadManager
 	typeId int
 	ctx    context.Context
 }
 
 func NewNjuedu() *Njuedu {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Njuedu{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 

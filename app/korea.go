@@ -3,28 +3,26 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/korea"
-	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
+	"bookget/pkg/downloader"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
-	"sync"
 )
 
 type Korea struct {
-	dt   *DownloadTask
-	body []byte
+	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewKorea() *Korea {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Korea{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -79,55 +77,12 @@ func (r *Korea) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(vol.Canvases))
-		r.do(vol.Canvases)
+		r.dm.AddImageTasks(vol.Canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
-}
-
-func (r *Korea) do(imgUrls []string) (msg string, err error) {
-	if imgUrls == nil {
-		return
-	}
-	fmt.Println()
-	size := len(imgUrls)
-
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		log.Printf("Get %d/%d, %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			util.PrintSleepTime(config.Conf.Sleep)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
 }
 
 func (r *Korea) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []korea.PartialCanvases, err error) {

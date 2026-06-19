@@ -21,14 +21,16 @@ import (
 
 type SiEdu struct {
 	dt  *DownloadTask
+	dm  *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewSiEdu() *SiEdu {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &SiEdu{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 

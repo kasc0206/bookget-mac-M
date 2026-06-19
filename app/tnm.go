@@ -16,14 +16,16 @@ import (
 
 type Tnm struct {
 	dt  *DownloadTask
+	dm  *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewTnm() *Tnm {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Tnm{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 

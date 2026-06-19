@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
@@ -9,8 +10,6 @@ import (
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -18,12 +17,14 @@ import (
 
 type Berkeley struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewBerkeley() *Berkeley {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Berkeley{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -70,47 +71,14 @@ func (r *Berkeley) download() (msg string, err error) {
 		return "requested URL was not found.", err
 	}
 	log.Printf(" %d files \n", len(canvases))
-	r.do(canvases)
+	r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return "", nil
 }
 
-func (r *Berkeley) do(canvases []string) (msg string, err error) {
-	if canvases == nil {
-		return
-	}
-	fmt.Println()
-	referer := r.dt.Url
-	size := len(canvases)
-	for i, dUrl := range canvases {
-		if dUrl == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		ext := filepath.Ext(dUrl)
-		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		log.Printf("Get %d/%d,  URL: %s\n", i+1, size, dUrl)
-		ctx := context.Background()
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-				"Referer":    referer,
-			},
-		}
-		gohttp.FastGet(ctx, dUrl, opts)
-		fmt.Println()
-	}
-	return "", err
-}
+
 
 func (r *Berkeley) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Berkeley")

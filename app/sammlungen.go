@@ -1,6 +1,9 @@
 package app
 
 import (
+	"bookget/config"
+	"bookget/pkg/downloader"
+	"context"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
@@ -10,12 +13,14 @@ import (
 
 type Sammlungen struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewSammlungen() *Sammlungen {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Sammlungen{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 

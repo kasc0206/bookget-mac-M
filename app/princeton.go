@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/princeton"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"context"
 	"encoding/json"
@@ -10,20 +11,20 @@ import (
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 type Princeton struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewPrinceton() *Princeton {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Princeton{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -74,56 +75,15 @@ func (r *Princeton) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, len(respVolume), len(canvases))
-		r.do(canvases)
+		r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }
 
-func (r *Princeton) do(canvases []string) (msg string, err error) {
-	if canvases == nil {
-		return
-	}
-	fmt.Println()
-	referer := r.dt.Url
-	size := len(canvases)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range canvases {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		log.Printf("Get %d/%d page, URL: %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-					"Referer":    referer,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
-}
+
 
 func (r *Princeton) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	var manifestUrl = ""
