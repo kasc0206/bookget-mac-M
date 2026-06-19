@@ -119,7 +119,7 @@ func (p *Wzlib) do(dUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (p *Wzlib) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (p *Wzlib) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Wzlib")
 }
 

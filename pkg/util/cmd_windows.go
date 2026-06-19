@@ -78,7 +78,6 @@ func GetOutput(reader *bufio.Reader) {
 		fmt.Print(output) //输出屏幕内容
 		sumOutput += output
 	}
-	return
 }
 
 // PrintSleepTime 打印0-60秒等待

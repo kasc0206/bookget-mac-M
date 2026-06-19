@@ -172,11 +172,11 @@ func (r *ZhuCheng) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []stri
 	return canvases, err
 }
 
-func (r *ZhuCheng) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
+func (r *ZhuCheng) getBody(_ string, _ *cookiejar.Jar) ([]byte, error) {
 	return nil, fmt.Errorf("getBody not implemented for ZhuCheng")
 }
 
-func (r *ZhuCheng) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *ZhuCheng) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for ZhuCheng")
 }
 

@@ -166,7 +166,7 @@ func (p *Niiac) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (p *Niiac) postBody(sUrl string, d []byte) ([]byte, error) {
+func (p *Niiac) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Niiac")
 }
 

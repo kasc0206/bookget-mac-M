@@ -203,7 +203,7 @@ func (r *LodNLGoKr) getVolumeUrls() (volumes []Volume, err error) {
 	return volumes, err
 }
 
-func (r *LodNLGoKr) getCanvasesByUrl(volId int, sUrl string) ([]string, error) {
+func (r *LodNLGoKr) getCanvasesByUrl(volId int, _ string) ([]string, error) {
 	//loadVol('CNTS-00047981911',1,'/wonmun5/data4/imagedb/ncldb7/KOL000021672',155,'26');
 	matches := regexp.MustCompile(`loadVol\(([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)\);`).FindAllStringSubmatch(r.bufBody, -1)
 	if len(matches) == 0 {

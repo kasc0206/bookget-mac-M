@@ -189,7 +189,7 @@ func (r *CafaEdu) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *CafaEdu) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *CafaEdu) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for CafaEdu")
 }
 

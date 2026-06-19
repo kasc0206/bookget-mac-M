@@ -119,7 +119,7 @@ func (r DziCnLib) dezoomify() (msg string, err error) {
 	return "", err
 }
 
-func (r DziCnLib) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r DziCnLib) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for DziCnLib")
 }
 

@@ -125,7 +125,7 @@ func (r *RslRu) do(canvases []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *RslRu) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *RslRu) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for RslRu")
 }
 

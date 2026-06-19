@@ -121,7 +121,7 @@ func (r *Ncpssd) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, 
 	return volumes, err
 }
 
-func (r *Ncpssd) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r *Ncpssd) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	return nil, fmt.Errorf("getCanvases not implemented for Ncpssd")
 }
 

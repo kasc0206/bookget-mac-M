@@ -49,7 +49,7 @@ func (r *Huawen) Run(sUrl string) (msg string, err error) {
 	return r.download()
 }
 
-func (r *Huawen) getBookId(sUrl string) (bookId string) {
+func (r *Huawen) getBookId(_ string) (bookId string) {
 	return ""
 }
 
@@ -121,7 +121,7 @@ func (r *Huawen) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, 
 	return volumes, nil
 }
 
-func (r *Huawen) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r *Huawen) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	return nil, fmt.Errorf("getCanvases not implemented for Huawen")
 }
 

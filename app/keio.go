@@ -65,7 +65,7 @@ func (r *Keio) getBookId(sUrl string) (bookId, volumeId string) {
 	return bookId, volumeId
 }
 
-func (r *Keio) getManifestUrl(sUrl string) (uri string, err error) {
+func (r *Keio) getManifestUrl(_ string) (uri string, err error) {
 	//https://db2.sido.keio.ac.jp/kanseki/bib_image?id=
 	apiUrl := "https://db2.sido.keio.ac.jp/kanseki/bib_image?id=" + r.dt.BookId
 	bs, err := r.getBody(apiUrl, r.dt.Jar)
@@ -116,7 +116,7 @@ func (r *Keio) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *Keio) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Keio) getVolumes(sUrl string, _ *cookiejar.Jar) (volumes []string, err error) {
 	bs, err := r.getBody(sUrl, r.dt.Jar)
 	matches := regexp.MustCompile(`data-folid=['|"]([A-z0-9]+)['|"]`).FindAllSubmatch(bs, -1)
 	if matches == nil {
@@ -151,8 +151,8 @@ func (r *Keio) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, 
 	}
 	size := len(manifest.Sequences[0].Canvases)
 	canvases = make([]string, 0, size)
-	for _, canvase := range manifest.Sequences[0].Canvases {
-		for _, image := range canvase.Images {
+	for _, canvas := range manifest.Sequences[0].Canvases {
+		for _, image := range canvas.Images {
 			if config.Conf.UseDzi {
 				//dezoomify-rs URL
 				iiiInfo := fmt.Sprintf("%s/info.json", image.Resource.Service.Id)

@@ -143,34 +143,24 @@ func chineseToValue(chnStr string) (num int) {
 	switch chnStr {
 	case "零":
 		num = 0
-		break
 	case "一":
 		num = 1
-		break
 	case "二":
 		num = 2
-		break
 	case "三":
 		num = 3
-		break
 	case "四":
 		num = 4
-		break
 	case "五":
 		num = 5
-		break
 	case "六":
 		num = 6
-		break
 	case "七":
 		num = 7
-		break
 	case "八":
 		num = 8
-		break
 	case "九":
 		num = 9
-		break
 	default:
 		num = -1
 	}

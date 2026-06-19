@@ -120,7 +120,7 @@ func (p *Luoyang) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string,
 	return volumes, nil
 }
 
-func (p *Luoyang) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (p *Luoyang) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	return nil, fmt.Errorf("getCanvases not implemented for Luoyang")
 }
 

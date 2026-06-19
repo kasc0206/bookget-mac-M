@@ -153,7 +153,7 @@ func (r *Ouroots) getVolumes(catalogKey string) (ouroots.ResponseVolume, error) 
 	return respVolume, nil
 }
 
-func (r *Ouroots) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r *Ouroots) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	return nil, fmt.Errorf("getCanvases not implemented for Ouroots")
 }
 
@@ -177,7 +177,7 @@ func (r *Ouroots) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *Ouroots) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *Ouroots) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Ouroots")
 }
 

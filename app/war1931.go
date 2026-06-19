@@ -178,7 +178,7 @@ func (r *War1931) getJsonUrlTemplate(jsonUrl, fileCode, docType string) (jsonUrl
 	return jsonUrlTemplate, err
 }
 
-func (r *War1931) getVolumesForBz(sUrl string, jar *cookiejar.Jar) (volumes []war.PartialVolumes, err error) {
+func (r *War1931) getVolumesForBz(_ string, jar *cookiejar.Jar) (volumes []war.PartialVolumes, err error) {
 	years, err := r.findBzYear(r.fileCode)
 	if err != nil {
 		return nil, err
@@ -257,7 +257,7 @@ func (r *War1931) findBzMonth(year string) (years []string, err error) {
 	return resp.Result, err
 }
 
-func (r *War1931) getVolumesForQk(sUrl string, jar *cookiejar.Jar) (volumes []war.PartialVolumes, err error) {
+func (r *War1931) getVolumesForQk(_ string, jar *cookiejar.Jar) (volumes []war.PartialVolumes, err error) {
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/backend-prod/esBook/findDirectoryByYear/" + r.fileCode
 	bs, err := r.getBody(apiUrl, jar)
 	if err != nil {
@@ -301,8 +301,8 @@ func (r *War1931) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []strin
 	}
 	size := len(manifest.Sequences[0].Canvases)
 	canvases = make([]string, 0, size)
-	for _, canvase := range manifest.Sequences[0].Canvases {
-		for _, image := range canvase.Images {
+	for _, canvas := range manifest.Sequences[0].Canvases {
+		for _, image := range canvas.Images {
 			iiiInfo := fmt.Sprintf("%s/info.json", image.Resource.Service.Id)
 			canvases = append(canvases, iiiInfo)
 		}

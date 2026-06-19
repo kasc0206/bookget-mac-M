@@ -125,7 +125,7 @@ func (r *NdlJP) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *NdlJP) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *NdlJP) getVolumes(_ string, jar *cookiejar.Jar) (volumes []string, err error) {
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/api/meta/search/toc/facet/" + r.dt.BookId
 	bs, err := r.getBody(apiUrl, jar)
 	if err != nil {

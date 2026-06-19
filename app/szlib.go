@@ -182,7 +182,7 @@ func (r *SzLib) getBody(sUrl string) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *SzLib) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *SzLib) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for SzLib")
 }
 

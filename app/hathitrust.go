@@ -115,11 +115,11 @@ func (r Hathitrust) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r Hathitrust) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r Hathitrust) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Hathitrust")
 }
 
-func (r Hathitrust) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r Hathitrust) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	bs, err := r.getBody(r.dt.Url, r.dt.Jar)
 	if err != nil || bs == nil {
 		return nil, err
@@ -136,11 +136,11 @@ func (r Hathitrust) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []str
 	size, _ := strconv.Atoi(matches[1])
 
 	canvases = make([]string, 0, size)
-	ext := config.Conf.FileExt
 	format := "jpeg"
-	if ext == ".png" {
+	switch config.Conf.FileExt {
+	case ".png":
 		format = "png"
-	} else if ext == ".tif" {
+	case ".tif":
 		format = "tiff"
 	}
 	for i := 0; i < size; i++ {

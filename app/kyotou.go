@@ -202,7 +202,7 @@ func (r *Kyotou) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *Kyotou) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *Kyotou) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Kyotou")
 }
 

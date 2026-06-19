@@ -152,11 +152,11 @@ func (r *Sdlib) do(canvases []string) (err error) {
 	return nil
 }
 
-func (r *Sdlib) getVolumes(rawUrl string) (volumes []string, err error) {
+func (r *Sdlib) getVolumes(_ string) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Sdlib")
 }
 
-func (r *Sdlib) getCanvases(rawUrl string) (canvases []string, err error) {
+func (r *Sdlib) getCanvases(_ string) (canvases []string, err error) {
 	apiUrl := fmt.Sprintf("http://%s/dev-api/ancientbooks/front/getFileContentPage/3/%s", r.parsedUrl.Host, r.bookId)
 	r.bufBody, err = r.getBody(apiUrl)
 	if err != nil {

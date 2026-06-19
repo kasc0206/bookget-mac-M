@@ -115,7 +115,7 @@ func (r *HannomNlv) do(imgUrls []string) (msg string, err error) {
 	return "", nil
 }
 
-func (r *HannomNlv) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *HannomNlv) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for HannomNlv")
 }
 
@@ -138,10 +138,10 @@ func (r *HannomNlv) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []str
 	return canvases, err
 }
 
-func (r *HannomNlv) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
+func (r *HannomNlv) getBody(_ string, _ *cookiejar.Jar) ([]byte, error) {
 	return nil, fmt.Errorf("getBody not implemented for HannomNlv")
 }
 
-func (r *HannomNlv) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *HannomNlv) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for HannomNlv")
 }

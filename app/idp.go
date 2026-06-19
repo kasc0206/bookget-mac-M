@@ -91,11 +91,11 @@ func (r *Idp) download() (msg string, err error) {
 	return "", nil
 }
 
-func (r *Idp) do(imgUrls []string) (msg string, err error) {
+func (r *Idp) do(_ []string) (msg string, err error) {
 	return "", fmt.Errorf("do not implemented for Idp")
 }
 
-func (r *Idp) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Idp) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Idp")
 }
 
@@ -140,6 +140,6 @@ func (r *Idp) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *Idp) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *Idp) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Idp")
 }

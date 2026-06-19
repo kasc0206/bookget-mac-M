@@ -103,7 +103,7 @@ func (i *IIIF) do(imgUrls []string) (msg string, err error) {
 	return "", nil
 }
 
-func (i *IIIF) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (i *IIIF) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	var manifest = new(iiif.ManifestResponse)
 	if err = json.Unmarshal(i.xmlContent, manifest); err != nil {
 		log.Printf("json.Unmarshal failed: %s\n", err)
@@ -130,7 +130,7 @@ func (i *IIIF) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, 
 	return canvases, nil
 }
 
-func (i *IIIF) getCanvasesV3(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (i *IIIF) getCanvasesV3(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	var manifest = new(iiif.ManifestV3Response)
 	if err = json.Unmarshal(i.xmlContent, manifest); err != nil {
 		log.Printf("json.Unmarshal failed: %s\n", err)

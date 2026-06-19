@@ -119,11 +119,11 @@ func (r *Nomfoundation) do(canvases []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *Nomfoundation) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Nomfoundation) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Nomfoundation")
 }
 
-func (r *Nomfoundation) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r *Nomfoundation) getCanvases(sUrl string, _ *cookiejar.Jar) (canvases []string, err error) {
 	if !strings.Contains(sUrl, "/page/") {
 		sUrl += "/page/1"
 	}

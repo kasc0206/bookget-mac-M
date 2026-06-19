@@ -162,7 +162,7 @@ func (r *Khirin) doNormal(canvases []string) bool {
 	return true
 }
 
-func (r *Khirin) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Khirin) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Khirin")
 }
 

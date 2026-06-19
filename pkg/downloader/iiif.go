@@ -186,7 +186,7 @@ func NewIIIFDownloaderDefault() *IIIFDownloader {
 
 	dl := &IIIFDownloader{
 		client:        &http.Client{Jar: jar, Transport: tr},
-		userAgent:     userAgent,
+		userAgent:     config.Conf.UserAgent,
 		maxRetries:    maxRetries,
 		jpgQuality:    JPGQuality,
 		maxConcurrent: maxConcurrent,

@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"bookget/config"
 	"bookget/pkg/progressbar"
 	"bytes"
 	"context"
@@ -298,7 +299,7 @@ func (task *DownloadTask) multiThreadDownload(ctx context.Context, dm *DownloadM
 				req.Header.Set(k, v)
 			}
 			if req.Header.Get("User-Agent") == "" {
-				req.Header.Set("User-Agent", userAgent)
+				req.Header.Set("User-Agent", config.Conf.UserAgent)
 			}
 
 			// 设置Range头
@@ -365,7 +366,7 @@ func (task *DownloadTask) singleThreadDownload(ctx context.Context, dm *Download
 		req.Header.Set(k, v)
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", userAgent)
+		req.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
 	client := &http.Client{}
@@ -436,7 +437,7 @@ func (task *DownloadTask) getFileInfo(ctx context.Context) error {
 		req.Header.Set(k, v)
 	}
 	if req.Header.Get("User-Agent") == "" {
-		req.Header.Set("User-Agent", userAgent)
+		req.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
 	client := &http.Client{}
@@ -457,8 +458,7 @@ func (task *DownloadTask) getFileInfo(ctx context.Context) error {
 	}
 
 	// 处理分块传输的情况
-	isChunked := resp.TransferEncoding != nil &&
-		len(resp.TransferEncoding) > 0 &&
+	isChunked := len(resp.TransferEncoding) > 0 &&
 		resp.TransferEncoding[0] == "chunked"
 
 	// 获取文件大小
@@ -515,7 +515,7 @@ func (task *DownloadTask) detectSupportedMethods(ctx context.Context) error {
 		headReq.Header.Set(k, v)
 	}
 	if headReq.Header.Get("User-Agent") == "" {
-		headReq.Header.Set("User-Agent", userAgent)
+		headReq.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
 	client := &http.Client{}
@@ -536,7 +536,7 @@ func (task *DownloadTask) detectSupportedMethods(ctx context.Context) error {
 			getReq.Header.Set(k, v)
 		}
 		if getReq.Header.Get("User-Agent") == "" {
-			getReq.Header.Set("User-Agent", userAgent)
+			getReq.Header.Set("User-Agent", config.Conf.UserAgent)
 		}
 
 		// 只请求前1个字节

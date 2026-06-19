@@ -111,7 +111,7 @@ func (r *Gslib) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *Gslib) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Gslib) getVolumes(sUrl string, _ *cookiejar.Jar) (volumes []string, err error) {
 	// Currently assumes the initial URL is the only volume
 	volumes = append(volumes, sUrl)
 	return volumes, nil

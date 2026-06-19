@@ -169,6 +169,6 @@ func (r *OnbDigital) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *OnbDigital) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *OnbDigital) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for OnbDigital")
 }

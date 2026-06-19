@@ -138,7 +138,7 @@ func (r *Sdutcm) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r *Sdutcm) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r *Sdutcm) getVolumes(_ string, jar *cookiejar.Jar) (volumes []string, err error) {
 	ancientVolume := r.getVolumeId(r.body)
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/sdutcm/ancient/book/getVolume.jspx?lshh=" + ancientVolume
 	bs, err := getBody(apiUrl, jar)
@@ -153,7 +153,7 @@ func (r *Sdutcm) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, 
 	return volumes, nil
 }
 
-func (r *Sdutcm) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []string, err error) {
+func (r *Sdutcm) getCanvases(_ string, _ *cookiejar.Jar) (canvases []string, err error) {
 	r.token = r.getToken(r.body)
 	size := r.getPageCount(r.body)
 	canvases = make([]string, 0, size)

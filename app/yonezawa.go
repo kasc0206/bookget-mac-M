@@ -183,7 +183,7 @@ func (p *Yonezawa) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (p *Yonezawa) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *Yonezawa) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Yonezawa")
 }
 

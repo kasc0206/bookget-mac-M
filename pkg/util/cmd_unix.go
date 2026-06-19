@@ -74,7 +74,6 @@ func GetOutput(reader *bufio.Reader) {
 		fmt.Print(output) //输出屏幕内容
 		sumOutput += output
 	}
-	return
 }
 
 // PrintSleepTime 打印0-60秒等待
@@ -126,7 +125,7 @@ func OpenWebBrowser(args []string) bool {
 	return true
 }
 
-func isProcessRunning(processName string) (bool, error) {
+func isProcessRunning(_ string) (bool, error) {
 
 	return false, nil
 }

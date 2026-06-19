@@ -121,7 +121,7 @@ func (r Tjlswx) do(imgUrls []string) (msg string, err error) {
 	return "", err
 }
 
-func (r Tjlswx) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
+func (r Tjlswx) getVolumes(_ string, jar *cookiejar.Jar) (volumes []string, err error) {
 	apiUrl := fmt.Sprintf("%s://%s/Ashx/GetPageImage.ashx?volume=1&readType=photo&%s",
 		r.dt.UrlParsed.Scheme, r.dt.UrlParsed.Host, r.dt.UrlParsed.RawQuery)
 	bs, err := r.getBody(apiUrl, jar)

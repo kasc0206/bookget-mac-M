@@ -494,17 +494,17 @@ func (r *ChinaNlc) getCanvases() (canvases []string, err error) {
 	iBid := int(bid)
 	//图片类型检测
 	var pageUrl string
-	aid := v.Get("aid")
-	if aid == "495" || aid == "952" || aid == "467" || aid == "1080" {
+	switch v.Get("aid") {
+	case "495", "952", "467", "1080":
 		pageUrl = fmt.Sprintf("%s://%s/allSearch/openBookPic?id=%d&l_id=%s&indexName=data_%s",
-			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("lid"), aid)
-	} else if aid == "022" {
+			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("lid"), v.Get("aid"))
+	case "022":
 		//中国记忆库图片 不用登录可以查看
 		pageUrl = fmt.Sprintf("%s://%s/allSearch/openPic_noUser?id=%d&identifier=%s&indexName=data_%s",
-			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("did"), aid)
-	} else {
+			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("did"), v.Get("aid"))
+	default:
 		pageUrl = fmt.Sprintf("%s://%s/allSearch/openPic?id=%d&identifier=%s&indexName=data_%s",
-			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("did"), aid)
+			r.parsedUrl.Scheme, r.parsedUrl.Host, iBid, v.Get("did"), v.Get("aid"))
 	}
 	//
 	bs, err := r.getBody(pageUrl)
@@ -564,11 +564,12 @@ func (r *ChinaNlc) getToken(uri string) (tokenKey, timeKey, timeFlag string) {
 	//timeKey := ""
 	//timeFlag := ""
 	for _, v := range params {
-		if v[1] == "tokenKey" {
+		switch v[1] {
+		case "tokenKey":
 			tokenKey = v[2]
-		} else if v[1] == "timeKey" {
+		case "timeKey":
 			timeKey = v[2]
-		} else if v[1] == "timeFlag" {
+		case "timeFlag":
 			timeFlag = v[2]
 		}
 	}

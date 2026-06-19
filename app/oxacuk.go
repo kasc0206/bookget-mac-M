@@ -166,7 +166,7 @@ func (r *Oxacuk) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *Oxacuk) postBody(sUrl string, d []byte) ([]byte, error) {
+func (r *Oxacuk) postBody(_ string, _ []byte) ([]byte, error) {
 	return nil, fmt.Errorf("postBody not implemented for Oxacuk")
 }
 

@@ -112,15 +112,15 @@ func (r *NlcTw) Run() (err error) {
 	return err
 }
 
-func (r *NlcTw) do(canvases []string) (err error) {
+func (r *NlcTw) do(_ []string) (err error) {
 	return fmt.Errorf("do not implemented for NlcTw")
 }
 
-func (r *NlcTw) getVolumes(rawUrl string) (volumes []string, err error) {
+func (r *NlcTw) getVolumes(_ string) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for NlcTw")
 }
 
-func (r *NlcTw) getCanvases(rawUrl string) (canvases []string, err error) {
+func (r *NlcTw) getCanvases(_ string) (canvases []string, err error) {
 	return nil, fmt.Errorf("getCanvases not implemented for NlcTw")
 }
 
