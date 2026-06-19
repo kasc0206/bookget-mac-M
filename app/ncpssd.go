@@ -36,6 +36,9 @@ func (r *Ncpssd) GetRouterInit(sUrl string) (map[string]interface{}, error) {
 
 func (r *Ncpssd) Run(sUrl string) (msg string, err error) {
 	r.dt.UrlParsed, err = url.Parse(sUrl)
+	if err != nil {
+		return "", err
+	}
 	r.dt.Url = sUrl
 	r.dt.Jar, _ = cookiejar.New(nil)
 	WaitNewCookie()
@@ -61,10 +64,6 @@ func (r *Ncpssd) download() (msg string, err error) {
 		return "requested URL was not found.", err
 	}
 	log.Printf("Get %s\n", r.dt.Url)
-	bookId := r.dt.UrlParsed.Query().Get("type")
-	if bookId == "" {
-		bookId = "ncpssd"
-	}
 	r.dt.SavePath = config.Conf.Directory
 	for i, vol := range respVolume {
 		if !config.VolumeRange(i) {

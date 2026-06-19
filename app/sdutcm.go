@@ -105,6 +105,9 @@ func (r *Sdutcm) do(imgUrls []string) (msg string, err error) {
 		log.Printf("Get %d/%d,  URL: %s\n", i+1, size, uri)
 
 		bs, err := getBody(uri, r.dt.Jar)
+		if err != nil {
+			break
+		}
 		var respBody sdutcm.PagePicTxt
 		if err = json.Unmarshal(bs, &respBody); err != nil {
 			break
@@ -142,6 +145,9 @@ func (r *Sdutcm) getVolumes(_ string, jar *cookiejar.Jar) (volumes []string, err
 	ancientVolume := r.getVolumeId(r.body)
 	apiUrl := "https://" + r.dt.UrlParsed.Host + "/sdutcm/ancient/book/getVolume.jspx?lshh=" + ancientVolume
 	bs, err := getBody(apiUrl, jar)
+	if err != nil {
+		return nil, err
+	}
 	var respBody sdutcm.VolumeList
 	if err = json.Unmarshal(bs, &respBody); err != nil {
 		return nil, err

@@ -198,7 +198,8 @@ func (r *Familysearch) getImageData(sUrl string) (imageData family.ImageData, er
 		return
 	}
 	var resultError family.ResultError
-	if err = json.Unmarshal(bs, &resultError); resultError.Error.StatusCode != 0 {
+	_ = json.Unmarshal(bs, &resultError)
+	if resultError.Error.StatusCode != 0 {
 		msg := fmt.Sprintf("StatusCode: %d, Message: %s", resultError.Error.StatusCode, resultError.Error.Message)
 		err = errors.New(msg)
 		return
@@ -242,7 +243,8 @@ func (r *Familysearch) getCanvases(sUrl string, imageData family.ImageData) (can
 		return
 	}
 	var resultError family.ResultError
-	if err = json.Unmarshal(bs, &resultError); resultError.Error.StatusCode != 0 {
+	_ = json.Unmarshal(bs, &resultError)
+	if resultError.Error.StatusCode != 0 {
 		msg := fmt.Sprintf("StatusCode: %d, Message: %s", resultError.Error.StatusCode, resultError.Error.Message)
 		err = errors.New(msg)
 		return

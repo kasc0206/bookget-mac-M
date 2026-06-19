@@ -205,8 +205,6 @@ func (p *Yonezawa) getImageUrls(host, imageDir, val string) (imgUrls []string) {
 func (p *Yonezawa) makeUri(imageDir, val string, i int) string {
 	dir2 := val[5:8]
 	book := val[0:8]
-	page := val[len(val)-3:]
-	page = regexp.MustCompile(`^0+0?`).ReplaceAllString(page, "")
 	sortId := fmt.Sprintf("%03d", i)
 	s := fmt.Sprintf("%s%s/%s_%s.jpg", imageDir, dir2, book, sortId)
 	return s

@@ -253,6 +253,9 @@ func (r *KyudbSnu) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string
 		FormParams: d,
 	})
 	resp, err := cli.Post(fmt.Sprintf("%s://%s/pf01/rendererImg.do", r.dt.UrlParsed.Scheme, r.dt.UrlParsed.Host))
+	if err != nil {
+		return nil, err
+	}
 	bs, err := resp.GetBody()
 	if bs == nil || err != nil {
 		return nil, err
@@ -384,11 +387,11 @@ func (r *KyudbSnu) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 		CookieFile: config.Conf.CookieFile,
 		CookieJar:  jar,
 		Headers: map[string]interface{}{
-			"User-Agent":      config.Conf.UserAgent,
-			"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-			"Accept-Language": "en-US,en;q=0.5",
-			"Accept-Encoding": "gzip, deflate",
-			"Connection":      "keep-alive",
+			"User-Agent":                config.Conf.UserAgent,
+			"Accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+			"Accept-Language":           "en-US,en;q=0.5",
+			"Accept-Encoding":           "gzip, deflate",
+			"Connection":                "keep-alive",
 			"Upgrade-Insecure-Requests": "1",
 		},
 	})

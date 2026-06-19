@@ -20,7 +20,6 @@ func initSeqRange() {
 		Conf.SeqStart, _ = strconv.Atoi(m[0])
 		Conf.SeqEnd, _ = strconv.Atoi(m[1])
 	}
-	return
 }
 
 // initVolumeRange    false = 最小值 <= 当前页码 <=  最大值
@@ -33,7 +32,6 @@ func initVolumeRange() {
 		Conf.VolStart, _ = strconv.Atoi(m[0])
 		Conf.VolEnd, _ = strconv.Atoi(m[1])
 	}
-	return
 }
 
 // PageRange    return true (最小值 <= 当前页码 <=  最大值)

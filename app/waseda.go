@@ -36,6 +36,9 @@ func (r *Waseda) GetRouterInit(sUrl string) (map[string]interface{}, error) {
 func (r Waseda) Run(sUrl string) (msg string, err error) {
 
 	r.dt.UrlParsed, err = url.Parse(sUrl)
+	if err != nil {
+		return "", err
+	}
 	r.dt.Url = sUrl
 
 	r.dt.BookId = getBookId(r.dt.Url)

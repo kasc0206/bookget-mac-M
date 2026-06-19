@@ -158,8 +158,9 @@ func (r *War1931) getVolumes(apiUrl string, jar *cookiejar.Jar) (volumes []war.P
 	case "qk":
 		volumes, err = r.getVolumesForQk(jsonUrl, r.dt.Jar)
 	default:
+		err = fmt.Errorf("unknown docType: %s", r.docType)
 	}
-	return volumes, nil
+	return volumes, err
 }
 
 func (r *War1931) getJsonUrlTemplate(jsonUrl, fileCode, docType string) (jsonUrlTemplate string, err error) {

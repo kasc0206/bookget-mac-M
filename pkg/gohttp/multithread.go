@@ -63,7 +63,7 @@ func (d *Download) ChunkInit() (err error) {
 	}
 
 	// Partial content not supported, and the file downladed.
-	if d.info.Rangeable == false {
+	if !d.info.Rangeable {
 		return nil
 	}
 
@@ -161,7 +161,7 @@ func (d *Download) GetInfoOrDownload() (*Info, error) {
 // Must be called only after init
 func (d *Download) ChunkStart() (err error) {
 	// If the file was already downloaded during GetInfoOrDownload, then there will be no chunks
-	if d.info.Rangeable == false {
+	if !d.info.Rangeable {
 		select {
 		case <-d.ctx.Done():
 			return d.ctx.Err()

@@ -178,9 +178,11 @@ func Zip(srcFile string, destZip string) error {
 			}
 			defer file.Close()
 
-			_, err = io.Copy(writer, file)
+			if _, err = io.Copy(writer, file); err != nil {
+				return err
+			}
 		}
-		return err
+		return nil
 	})
 	return err
 }
@@ -216,8 +218,10 @@ func Unzip(zipFile string, destDir string, sortId string) error {
 			}
 			defer outFile.Close()
 
-			_, err = io.Copy(outFile, inFile)
+			if _, err = io.Copy(outFile, inFile); err != nil {
+				return err
+			}
 		}
 	}
-	return err
+	return nil
 }

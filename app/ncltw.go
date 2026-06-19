@@ -101,6 +101,9 @@ func (r *NlcTw) Run() (err error) {
 
 	r.serverURL = "https://" + r.parsedUrl.Host + "/NCLSearch/WaterMark/GetVideoImage"
 	r.bufBody, err = r.getBodyByGui(r.rawUrl)
+	if err != nil {
+		return err
+	}
 
 	//保存URLs
 	err = os.WriteFile(r.urlsFile, []byte(r.bufBuilder.String()), os.ModePerm)

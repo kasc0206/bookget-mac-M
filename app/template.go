@@ -235,8 +235,5 @@ func IsChinaIP(jar *cookiejar.Jar) bool {
 	}
 	bs, _ := resp.GetBody()
 	text := string(bs)
-	if strings.Contains(text, "\"countryCode\":\"CN\"") {
-		return true
-	}
-	return false
+	return strings.Contains(text, "\"countryCode\":\"CN\"")
 }

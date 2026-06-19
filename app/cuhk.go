@@ -192,12 +192,7 @@ func (r *Cuhk) getCanvases(sUrl string) (canvases []string, err error) {
 		log.Printf("json.Unmarshal failed: %s\n", err)
 	}
 	for _, page := range resp.ImagePage {
-		var imgUrl string
-		//if config.Conf.UseDzi {
-		//	//dezoomify-rs URL
-		//	imgUrl = fmt.Sprintf("https://%s/iiif/2/%s/info.json", r.parsedUrl.Host, page.Identifier)
-		//} else {
-		imgUrl = fmt.Sprintf("https://%s/iiif/2/%s/%s", r.parsedUrl.Host, page.Identifier, config.Conf.Format)
+		imgUrl := fmt.Sprintf("https://%s/iiif/2/%s/%s", r.parsedUrl.Host, page.Identifier, config.Conf.Format)
 		//}
 		r.bufBuilder.WriteString(imgUrl)
 		r.bufBuilder.WriteString("\n")

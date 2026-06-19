@@ -161,9 +161,21 @@ func (r *ZhuCheng) getCanvases(sUrl string, jar *cookiejar.Jar) (canvases []stri
 		return
 	}
 	bid, err := r.getBid(bs)
+	if err != nil {
+		return nil, err
+	}
 	cid, err := r.getCID(bs)
+	if err != nil {
+		return nil, err
+	}
 	ext, err := r.getImgType(bs)
+	if err != nil {
+		return nil, err
+	}
 	pageSize, err := r.getPageNumber(bs)
+	if err != nil {
+		return nil, err
+	}
 	hostUrl := r.dt.UrlParsed.Scheme + "://" + r.dt.UrlParsed.Host + "/images/book/" + bid + "/" + cid + "/"
 	for i := 1; i <= pageSize; i++ {
 		imgUrl := hostUrl + fmt.Sprintf("%d", i) + ext

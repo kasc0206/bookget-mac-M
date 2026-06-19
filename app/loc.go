@@ -111,11 +111,11 @@ func (r *Loc) Run() (msg string, err error) {
 		r.bufBody = r.bufBody[start:end]
 		r.responseBody = []byte(r.bufBody)
 	} else {
-		r.responseBody, err = r.getBody(apiUrl)
+		r.responseBody, _ = r.getBody(apiUrl)
 		r.bufBody = string(r.responseBody)
 	}
 
-	r.canvases, err = r.getCanvases()
+	r.canvases, _ = r.getCanvases()
 	if err != nil || r.canvases == nil {
 		return "", err
 	}

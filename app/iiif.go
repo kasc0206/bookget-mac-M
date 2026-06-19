@@ -55,7 +55,7 @@ func (i *IIIF) Run(sUrl string) (msg string, err error) {
 
 func (i *IIIF) InitWithId(iTask int, sUrl string, id string) (msg string, err error) {
 	i.dt = new(DownloadTask)
-	i.dt.UrlParsed, err = url.Parse(sUrl)
+	i.dt.UrlParsed, _ = url.Parse(sUrl)
 	i.dt.Url = sUrl
 	i.dt.Index = iTask
 	i.dt.Jar, _ = cookiejar.New(nil)
@@ -78,8 +78,8 @@ func (i *IIIF) download() (msg string, err error) {
 		return "requested URL was not found.", err
 	}
 
-	ver, err := i.checkVersion(i.xmlContent)
-	var canvases = make([]string, 0, 1000)
+	ver, _ := i.checkVersion(i.xmlContent)
+	var canvases []string
 	if ver == 3 {
 		//https://catalog.lib.kyushu-u.ac.jp/image/manifest/1/820/1446033.json
 		canvases, err = i.getCanvasesV3(i.dt.Url, i.dt.Jar)

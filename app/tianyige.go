@@ -13,10 +13,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andreburgaud/crypt2go/ecb"
-	"github.com/andreburgaud/crypt2go/padding"
-	"golang.org/x/text/encoding/simplifiedchinese"
-	"golang.org/x/text/transform"
 	"io"
 	"log"
 	"math/rand"
@@ -29,6 +25,11 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/andreburgaud/crypt2go/ecb"
+	"github.com/andreburgaud/crypt2go/padding"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // APP_ID & APP_KEY form https://gj.tianyige.com.cn/js/2.f75e590e.chunk.js
@@ -207,7 +208,8 @@ func (r *Tianyige) getCanvases(bookId string, jar *cookiejar.Jar) (canvases []ti
 	for i := 1; i < 100; i++ {
 		apiUrl := fmt.Sprintf("https://%s/g/sw-anb/api/queryImageByCatalog?catalogId=%s", r.dt.UrlParsed.Host, bookId)
 		d := fmt.Sprintf(`{"param":{"pageNum":%d,"pageSize":999}}`, i)
-		bs, err := r.postBody(apiUrl, []byte(d), jar)
+		var bs []byte
+		bs, err = r.postBody(apiUrl, []byte(d), jar)
 		if bs == nil || err != nil {
 			break
 		}

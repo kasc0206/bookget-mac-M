@@ -1,7 +1,7 @@
 package downloader
 
 const (
-	maxConcurrent = 16 // 最大并发下载数
+	maxConcurrent = 16   // 最大并发下载数
 	minFileSize   = 1024 // 最小文件大小(1KB)
 
 	maxRetries = 3

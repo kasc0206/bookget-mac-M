@@ -29,14 +29,14 @@ func (r *Archive) GetRouterInit(sUrl string) (map[string]interface{}, error) {
 func (r *Archive) Run(sUrl string) (msg string, err error) {
 	// Example: https://archive.org/details/06054495.cn/page/n145/mode/2up
 	// Translate to: https://iiif.archive.org/iiif/06054495.cn/manifest.json
-	
+
 	itemId := r.getBookId(sUrl)
 	if itemId == "" {
 		return "requested URL was not found.", fmt.Errorf("could not extract item ID from %s", sUrl)
 	}
 
 	manifestUrl := fmt.Sprintf("https://iiif.archive.org/iiif/%s/manifest.json", itemId)
-	
+
 	return r.IIIF.Run(manifestUrl)
 }
 
@@ -59,6 +59,6 @@ func (r *Archive) getBookId(sUrl string) (bookId string) {
 	if m != nil {
 		return m[1]
 	}
-	
+
 	return ""
 }

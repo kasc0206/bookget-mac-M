@@ -285,7 +285,9 @@ func (r *ChinaNlc) download() (msg string, err error) {
 		filename := v.Get("bid") + ".pdf"
 		pageUrl := fmt.Sprintf("%s://%s/OutOpenBook/OpenObjectBook?aid=%s&bid=%s", r.parsedUrl.Scheme, r.parsedUrl.Host,
 			v.Get("aid"), v.Get("bid"))
-		err = r.doPdfUrl(pageUrl, filename)
+		if err = r.doPdfUrl(pageUrl, filename); err != nil {
+			return "", err
+		}
 
 		filename = v.Get("cid") + ".pdf"
 		pageUrl = fmt.Sprintf("%s://%s/OutOpenBook/OpenObjectBook?aid=%s&bid=%s", r.parsedUrl.Scheme, r.parsedUrl.Host,

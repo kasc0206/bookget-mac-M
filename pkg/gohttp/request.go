@@ -80,7 +80,7 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 		if err != nil {
 			return nil, err
 		}
-		req.WithContext(r.ctx)
+		req = req.WithContext(r.ctx)
 		r.req = req
 	case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodOptions:
 		// parse body
@@ -90,7 +90,7 @@ func (r *Request) Request(method, uri string, opts ...Options) (*Request, error)
 		if err != nil {
 			return nil, err
 		}
-		req.WithContext(r.ctx)
+		req = req.WithContext(r.ctx)
 		r.req = req
 	default:
 		return nil, errors.New("invalid request method")

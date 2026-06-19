@@ -42,10 +42,7 @@ func main() {
 
 // initializeConfig 处理配置初始化
 func initializeConfig(ctx context.Context) bool {
-	if !config.Init(ctx) {
-		return false
-	}
-	return true
+	return config.Init(ctx)
 }
 
 // executeByRunMode 根据运行模式执行相应操作

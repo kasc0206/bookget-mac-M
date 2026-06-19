@@ -78,7 +78,7 @@ func (r *Huawen) do(pdfUrl string) (msg string, err error) {
 	if FileExist(dest) {
 		return "", nil
 	}
-	u, err := url.Parse(pdfUrl)
+	u, _ := url.Parse(pdfUrl)
 	ctx := context.Background()
 	opts := gohttp.Options{
 		DestFile:    dest,

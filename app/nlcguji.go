@@ -196,9 +196,7 @@ func (s *NlcGuji) getCanvases() (canvases []nlc.DataItem, err error) {
 		return canvases, err
 	}
 	// 打印结果
-	for _, item := range resp.Data.ImageIdList {
-		canvases = append(canvases, item)
-	}
+	canvases = append(canvases, resp.Data.ImageIdList...)
 	return canvases, nil
 }
 

@@ -81,12 +81,12 @@ func (r *Gslib) download() (msg string, err error) {
 		if !config.VolumeRange(i) {
 			continue
 		}
-		
+
 		title := r.dt.BookId
 		if r.dt.Title != "" {
 			title = r.dt.Title
 		}
-		
+
 		if sizeVol == 1 {
 			r.dt.SavePath = CreateDirectory(title)
 		} else {

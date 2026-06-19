@@ -140,6 +140,9 @@ func (r *Ouroots) getVolumes(catalogKey string) (ouroots.ResponseVolume, error) 
 		},
 	})
 	resp, err := cli.Get("http://dsnode.ouroots.nlc.cn/gtService/data/catalogVolume")
+	if err != nil {
+		return ouroots.ResponseVolume{}, err
+	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
 		return ouroots.ResponseVolume{}, errors.New(resp.GetReasonPhrase())
@@ -209,6 +212,9 @@ func (r *Ouroots) getBase64Image(catalogKey string, volumeId, page int, userKey,
 		},
 	})
 	resp, err := cli.Get("http://dsnode.ouroots.nlc.cn/data/catalogImage")
+	if err != nil {
+		return
+	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
 		err = errors.New(resp.GetReasonPhrase())
