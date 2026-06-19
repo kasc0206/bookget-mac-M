@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ type DownloadTask struct {
 	SaveDir      string            // 保存目录
 	Threads      int               // 线程数
 	FileName     string            // 保存文件名(不含扩展名)
+	Jar          *cookiejar.Jar    // CookieJar（用于会话管理）
 	ContentType  string            // 文件类型
 	ContentSize  int64             // 文件大小
 	Success      bool              // 是否成功
@@ -305,7 +307,7 @@ func (task *DownloadTask) multiThreadDownload(ctx context.Context, dm *DownloadM
 			// 设置Range头
 			req.Header.Set("Range", fmt.Sprintf("bytes=%d-%d", start, end))
 
-			client := &http.Client{}
+			client := task.httpClient()
 			resp, err := client.Do(req.WithContext(ctx))
 			if err != nil {
 				errOnce.Do(func() { firstErr = err })
@@ -369,7 +371,7 @@ func (task *DownloadTask) singleThreadDownload(ctx context.Context, dm *Download
 		req.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
-	client := &http.Client{}
+	client := task.httpClient()
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
@@ -440,7 +442,7 @@ func (task *DownloadTask) getFileInfo(ctx context.Context) error {
 		req.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
-	client := &http.Client{}
+	client := task.httpClient()
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
@@ -518,7 +520,7 @@ func (task *DownloadTask) detectSupportedMethods(ctx context.Context) error {
 		headReq.Header.Set("User-Agent", config.Conf.UserAgent)
 	}
 
-	client := &http.Client{}
+	client := task.httpClient()
 	resp, err := client.Do(headReq.WithContext(ctx))
 
 	if err == nil && resp.StatusCode == http.StatusOK {
@@ -553,6 +555,14 @@ func (task *DownloadTask) detectSupportedMethods(ctx context.Context) error {
 
 	task.testedMethods = true
 	return nil
+}
+
+// httpClient 返回配置了 CookieJar 的 HTTP 客户端
+func (task *DownloadTask) httpClient() *http.Client {
+	if task.Jar != nil {
+		return &http.Client{Jar: task.Jar}
+	}
+	return &http.Client{}
 }
 
 // 辅助函数: 从URL获取文件名

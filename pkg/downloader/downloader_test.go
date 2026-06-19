@@ -2,6 +2,7 @@ package downloader
 
 import (
 	"context"
+	"net/http/cookiejar"
 	"testing"
 )
 
@@ -112,6 +113,35 @@ func TestAddTask_ClampThreads(t *testing.T) {
 	dm.AddTask("http://example.com/file.jpg", "GET", nil, nil, "/tmp", "file.jpg", 0)
 	if dm.tasks[0].Threads != 1 {
 		t.Errorf("Threads should default to 1, got %d", dm.tasks[0].Threads)
+	}
+}
+
+func TestDownloadTask_HttpClient_Default(t *testing.T) {
+	task := &DownloadTask{URL: "http://example.com/file.jpg"}
+	client := task.httpClient()
+	if client == nil {
+		t.Fatal("httpClient() returned nil")
+	}
+	if client.Jar != nil {
+		t.Error("expected nil Jar by default")
+	}
+}
+
+func TestDownloadTask_HttpClient_WithJar(t *testing.T) {
+	jar, _ := cookiejar.New(nil)
+	task := &DownloadTask{
+		URL: "http://example.com/file.jpg",
+		Jar: jar,
+	}
+	client := task.httpClient()
+	if client == nil {
+		t.Fatal("httpClient() returned nil")
+	}
+	if client.Jar == nil {
+		t.Error("expected non-nil Jar")
+	}
+	if client.Jar != jar {
+		t.Error("expected same Jar instance")
 	}
 }
 

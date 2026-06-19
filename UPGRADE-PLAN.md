@@ -134,23 +134,23 @@ func NewInsecureClient(timeout time.Duration) *http.Client {
 
 **现状**: 项目中存在两套下载体系共存
 
-| 模式 | 代表文件 | 特征 | 下载器数量 |
-|------|---------|------|:---------:|
-| 旧模式 `dt *DownloadTask` | `app/template.go` | 使用 `gohttp.FastGet()` + `QueueNew()` 并发，各下载器自行管理 | **45 个** |
-| 新模式 `dm *DownloadManager` | `pkg/downloader/downloader.go` | 集中式任务管理、统一进度条、Range 分片下载 | **8 个** |
-| 独立模式 `client *http.Client` | `cuhk.go`, `nlcguji.go` | 自建 HTTP 客户端，通过共享内存与 GUI 通信 | **3 个** |
+| 模式                           | 代表文件                       | 特征                                                          | 下载器数量 |
+| ------------------------------ | ------------------------------ | ------------------------------------------------------------- | :--------: |
+| 旧模式 `dt *DownloadTask`      | `app/template.go`              | 使用 `gohttp.FastGet()` + `QueueNew()` 并发，各下载器自行管理 | **45 个**  |
+| 新模式 `dm *DownloadManager`   | `pkg/downloader/downloader.go` | 集中式任务管理、统一进度条、Range 分片下载                    |  **8 个**  |
+| 独立模式 `client *http.Client` | `cuhk.go`, `nlcguji.go`        | 自建 HTTP 客户端，通过共享内存与 GUI 通信                     |  **3 个**  |
 
 **旧模式未覆盖的缺失功能（迁移前需补齐）**:
 
-| 缺失功能 | 影响 | 说明 |
-|---------|------|------|
-| `cookiejar.Jar` 透传 | 🔴 高 | 许多站点依赖 CookieJar 自动管理会话，`DownloadManager` 目前只支持字符串 Cookie |
-| `FileExist()` 跳过检查 | 🔴 高 | `if FileExist(dest) { continue }` 出现在几乎所有 `do()` 方法中 |
-| IIIF/DZI 集成 | 🔴 高 | `iiif.go` 的 `doDezoomify()` 走独立通路，不经过 `DownloadManager` |
-| `QueueLimit` 替代 | 🟡 中 | 旧模式每个下载器有独立协程池，`DownloadManager` 是全局信号量 |
-| 自定义请求头 | 🟡 中 | `berlin.go`/`iiif.go` 的 `doDezoomify()` 传递 `-H` 参数 |
-| 图片验证 | 🟢 低 | `image_downloader.go` 检查 `minFileSize`（已定义但未使用） |
-| GUI 共享内存 | 🟢 低 | `getBodyByGui()` 通过共享内存与 `bookget-gui` 通信 |
+| 缺失功能               | 影响  | 说明                                                                           |
+| ---------------------- | ----- | ------------------------------------------------------------------------------ |
+| `cookiejar.Jar` 透传   | 🔴 高 | 许多站点依赖 CookieJar 自动管理会话，`DownloadManager` 目前只支持字符串 Cookie |
+| `FileExist()` 跳过检查 | 🔴 高 | `if FileExist(dest) { continue }` 出现在几乎所有 `do()` 方法中                 |
+| IIIF/DZI 集成          | 🔴 高 | `iiif.go` 的 `doDezoomify()` 走独立通路，不经过 `DownloadManager`              |
+| `QueueLimit` 替代      | 🟡 中 | 旧模式每个下载器有独立协程池，`DownloadManager` 是全局信号量                   |
+| 自定义请求头           | 🟡 中 | `berlin.go`/`iiif.go` 的 `doDezoomify()` 传递 `-H` 参数                        |
+| 图片验证               | 🟢 低 | `image_downloader.go` 检查 `minFileSize`（已定义但未使用）                     |
+| GUI 共享内存           | 🟢 低 | `getBodyByGui()` 通过共享内存与 `bookget-gui` 通信                             |
 
 ---
 
@@ -218,11 +218,11 @@ func NewInsecureClient(timeout time.Duration) *http.Client {
 
 **选择标准**:
 
-| 下载器 | 选择理由 | 测试场景 |
-|--------|---------|---------|
-| `app/waseda.go` | 纯图片下载，最简单场景 | 基线验证 |
-| `app/ndljp.go` | PDF + 图片混合，多册 | 多类型验证 |
-| `app/harvard.go` | IIIF 协议，当前已用新模式但可做对比 | IIIF 验证 |
+| 下载器           | 选择理由                            | 测试场景   |
+| ---------------- | ----------------------------------- | ---------- |
+| `app/waseda.go`  | 纯图片下载，最简单场景              | 基线验证   |
+| `app/ndljp.go`   | PDF + 图片混合，多册                | 多类型验证 |
+| `app/harvard.go` | IIIF 协议，当前已用新模式但可做对比 | IIIF 验证  |
 
 **任务清单**:
 
