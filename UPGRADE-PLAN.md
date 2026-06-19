@@ -257,16 +257,44 @@ type HTTPError struct {
 
 ---
 
+## P4 — 清理（可选，低风险/噪声）
+
+### P4.1 errcheck — 未检查的返回值（~172 处）
+
+**说明**: 大量 `r.do()`、`bar.Add()`、`gohttp.FastGet()` 等调用的返回值未检查。绝大多数是设计上故意忽略的（进度条更新、日志等），修复成本高、收益低。
+
+**建议**:
+- 在 `.golangci.yml` 中禁用 `errcheck` linter，或添加 `//nolint:errcheck` 注释
+- 无需逐处修复
+
+**预计耗时**: 10 分钟（配置调整）
+
+### P4.2 unused — 未使用的声明（~128 处）
+
+**说明**: 主要包括：
+1. **Stub 方法** — 为满足接口而实现但未实际调用的方法（如 `getVolumes`、`postBody` 等）
+2. **未使用的常量/变量** — `defaultTimeout`、`defaultFormat` 等
+3. **未使用的结构体字段** — 各下载器中的 `bufBuilder`、`urlsFile` 等
+
+**建议**:
+- Stub 方法：上游代码需要，不可删除
+- 未使用常量：可删除
+- 未使用字段：可清理
+
+**预计耗时**: 2-3 小时（选择性清理）
+
+---
+
 ## 时间线建议
 
 ```
-Week 1: P0 紧急修复 + P1.2 (User-Agent)
-Week 2: P1.1 (添加测试)
-Week 3: P2.1 (TLS 配置化)
-Week 4: P2.2a (DownloadManager 增强)
-Week 5-6: P2.2b (试点迁移 2-3 个下载器)
-Week 7: P2.3 (CI Lint) + P3.1 (基础类型设计)
-Week 8+: 持续推进
+已完成: P0 (紧急修复), P1.2 (User-Agent), P2.3 (CI Lint), P3.2 (路径防护)
+Week 1: P1.1 (添加测试)
+Week 2: P2.1 (TLS 配置化)
+Week 3: P2.2a (DownloadManager 增强)
+Week 4-5: P2.2b (试点迁移 2-3 个下载器)
+Week 6: P3.1 (基础类型设计) + P3.3 (错误处理)
+Week 7+: P4 (清理 - 可选)
 ```
 
 ---
