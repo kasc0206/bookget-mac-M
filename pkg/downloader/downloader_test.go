@@ -128,6 +128,37 @@ func TestDownloadTask_HttpClient_Default(t *testing.T) {
 	}
 }
 
+func TestDziTask(t *testing.T) {
+	task := &DziTask{
+		URL:  "http://example.com/info.json",
+		Dest: "/tmp/output.jpg",
+		Args: []string{"-H", "Origin:http://example.com"},
+	}
+	if task.URL != "http://example.com/info.json" {
+		t.Errorf("URL = %s", task.URL)
+	}
+	if task.Dest != "/tmp/output.jpg" {
+		t.Errorf("Dest = %s", task.Dest)
+	}
+	if len(task.Args) != 2 {
+		t.Errorf("Args len = %d, want 2", len(task.Args))
+	}
+}
+
+func TestAddDziTask(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dm := NewDownloadManager(ctx, cancel, 4)
+	dm.AddDziTask("http://example.com/info.json", "/tmp/out.jpg", nil)
+	if len(dm.dziTasks) != 1 {
+		t.Errorf("dziTasks = %d, want 1", len(dm.dziTasks))
+	}
+	if dm.dziTasks[0].URL != "http://example.com/info.json" {
+		t.Errorf("dziTasks[0].URL = %s", dm.dziTasks[0].URL)
+	}
+}
+
 func TestDownloadTask_SkipIfExists(t *testing.T) {
 	task := &DownloadTask{
 		FileName:     "test.txt",

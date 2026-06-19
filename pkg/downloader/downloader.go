@@ -43,8 +43,16 @@ type DownloadTask struct {
 	testedMethods bool // 是否已检测过支持的方法
 }
 
+// DziTask 描述一个 IIIF/DZI 拼图下载任务
+type DziTask struct {
+	URL  string   // info.json URL
+	Dest string   // 输出文件路径
+	Args []string // 自定义参数（如 -H Origin:xxx）
+}
+
 type DownloadManager struct {
 	tasks         []*DownloadTask
+	dziTasks      []*DziTask
 	maxConcurrent int
 	successCount  int32
 	failCount     int32
@@ -107,6 +115,18 @@ func (dm *DownloadManager) AddTask(url, method string, headers map[string]string
 	dm.tasks = append(dm.tasks, task)
 }
 
+// AddDziTask 添加 IIIF/DZI 拼图下载任务
+func (dm *DownloadManager) AddDziTask(url, dest string, args []string) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	dm.dziTasks = append(dm.dziTasks, &DziTask{
+		URL:  url,
+		Dest: dest,
+		Args: args,
+	})
+}
+
 // SetBar 设置进度条
 func (dm *DownloadManager) SetBar(maxTasks int) {
 	dm.mu.Lock()
@@ -130,6 +150,11 @@ func (dm *DownloadManager) Start() {
 	}
 
 	dm.mu.Unlock()
+
+	// 处理 IIIF/DZI 任务
+	if len(dm.dziTasks) > 0 {
+		dm.processDziTasks()
+	}
 
 	for _, task := range dm.tasks {
 		dm.wg.Add(1)
@@ -185,6 +210,31 @@ func (dm *DownloadManager) getTasksToProcess() []*DownloadTask {
 		}
 	}
 	return tasks
+}
+
+// processDziTasks 处理 IIIF/DZI 拼图下载任务
+func (dm *DownloadManager) processDziTasks() {
+	for _, dzi := range dm.dziTasks {
+		dm.wg.Add(1)
+		go func(t *DziTask) {
+			dm.sem <- struct{}{}
+			defer func() {
+				<-dm.sem
+				dm.wg.Done()
+			}()
+
+			dl := NewIIIFDownloader(&config.Conf)
+			if err := dl.Dezoomify(dm.ctx, t.URL, t.Dest, t.Args); err != nil {
+				atomic.AddInt32(&dm.failCount, 1)
+				fmt.Printf("DZI下载失败: %s (%v)\n", t.Dest, err)
+			} else {
+				atomic.AddInt32(&dm.successCount, 1)
+				if !dm.UseSizeBar {
+					_ = dm.bar.Add(1)
+				}
+			}
+		}(dzi)
+	}
 }
 
 // WaitAll 等待所有任务完成
