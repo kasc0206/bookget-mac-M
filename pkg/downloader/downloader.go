@@ -331,7 +331,12 @@ func (task *DownloadTask) Download(ctx context.Context, dm *DownloadManager) err
 		return fmt.Errorf("文件大小过小: %d bytes", task.ContentSize)
 	}
 
-	// 2.5 跳过已存在的文件
+	// 2.5 初始化缓冲区
+	if task.buffer == nil {
+		task.buffer = bytes.NewBuffer(nil)
+	}
+
+	// 2.6 跳过已存在的文件
 	if task.SkipIfExists && task.FileName != "" {
 		filePath := filepath.Join(task.SaveDir, task.FileName)
 		if _, err := os.Stat(filePath); err == nil {
