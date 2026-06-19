@@ -30,6 +30,7 @@ type DownloadTask struct {
 	Threads      int               // 线程数
 	FileName     string            // 保存文件名(不含扩展名)
 	Jar          *cookiejar.Jar    // CookieJar（用于会话管理）
+	SkipIfExists bool              // 如果文件已存在则跳过下载
 	ContentType  string            // 文件类型
 	ContentSize  int64             // 文件大小
 	Success      bool              // 是否成功
@@ -234,6 +235,16 @@ func (task *DownloadTask) Download(ctx context.Context, dm *DownloadManager) err
 					task.FileName += ext
 				}
 			}
+		}
+	}
+
+	// 2.5 跳过已存在的文件
+	if task.SkipIfExists && task.FileName != "" {
+		filePath := filepath.Join(task.SaveDir, task.FileName)
+		if _, err := os.Stat(filePath); err == nil {
+			atomic.AddInt32(&dm.successCount, 1)
+			atomic.AddInt32(&dm.completed, 1)
+			return nil
 		}
 	}
 

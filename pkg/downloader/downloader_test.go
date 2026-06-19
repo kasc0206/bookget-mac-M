@@ -3,6 +3,7 @@ package downloader
 import (
 	"context"
 	"net/http/cookiejar"
+	"os"
 	"testing"
 )
 
@@ -124,6 +125,43 @@ func TestDownloadTask_HttpClient_Default(t *testing.T) {
 	}
 	if client.Jar != nil {
 		t.Error("expected nil Jar by default")
+	}
+}
+
+func TestDownloadTask_SkipIfExists(t *testing.T) {
+	task := &DownloadTask{
+		FileName:     "test.txt",
+		SaveDir:      t.TempDir(),
+		SkipIfExists: true,
+	}
+	// 先创建文件
+	filePath := task.SaveDir + "/" + task.FileName
+	if err := os.WriteFile(filePath, []byte("existing"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	dm := &DownloadManager{}
+	err := task.Download(context.Background(), dm)
+	if err != nil {
+		t.Errorf("expected nil when file exists, got: %v", err)
+	}
+	if dm.successCount != 1 {
+		t.Errorf("expected successCount=1, got %d", dm.successCount)
+	}
+}
+
+func TestDownloadTask_SkipIfExists_NotExists(t *testing.T) {
+	task := &DownloadTask{
+		FileName:     "nonexistent.txt",
+		SaveDir:      t.TempDir(),
+		SkipIfExists: false,
+	}
+	dm := &DownloadManager{}
+	// Without a URL this will fail on getFileInfo, but that's expected
+	// We just want to ensure it doesn't crash or report success
+	err := task.Download(context.Background(), dm)
+	if err == nil {
+		t.Error("expected error for missing URL")
 	}
 }
 
