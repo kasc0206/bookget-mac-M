@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http/cookiejar"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -114,6 +115,44 @@ func TestAddTask_ClampThreads(t *testing.T) {
 	dm.AddTask("http://example.com/file.jpg", "GET", nil, nil, "/tmp", "file.jpg", 0)
 	if dm.tasks[0].Threads != 1 {
 		t.Errorf("Threads should default to 1, got %d", dm.tasks[0].Threads)
+	}
+}
+
+func TestCreateVolumeDirectory(t *testing.T) {
+	baseDir := t.TempDir()
+	dirPath, err := CreateVolumeDirectory(baseDir, "0001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dirPath != baseDir+"/vol.0001" {
+		t.Errorf("path = %s, want %s/vol.0001", dirPath, baseDir)
+	}
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		t.Error("directory was not created")
+	}
+}
+
+func TestCreateVolumeDirectory_EmptyID(t *testing.T) {
+	baseDir := t.TempDir()
+	dirPath, err := CreateVolumeDirectory(baseDir, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dirPath != baseDir+"/vol.0000" {
+		t.Errorf("path = %s, want %s/vol.0000", dirPath, baseDir)
+	}
+}
+
+func TestValidateFileSize(t *testing.T) {
+	filePath := filepath.Join(t.TempDir(), "test.txt")
+	if err := os.WriteFile(filePath, []byte("hello"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateFileSize(filePath, 1); err != nil {
+		t.Errorf("expected no error for size=5 >= min=1, got: %v", err)
+	}
+	if err := ValidateFileSize(filePath, 10); err == nil {
+		t.Error("expected error for size=5 < min=10")
 	}
 }
 

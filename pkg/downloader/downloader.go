@@ -288,6 +288,11 @@ func (task *DownloadTask) Download(ctx context.Context, dm *DownloadManager) err
 		}
 	}
 
+	// 2.4 验证文件大小（0字节检查）
+	if task.ContentSize > 0 && task.ContentSize < int64(minFileSize) && task.ContentType != "text/html" {
+		return fmt.Errorf("文件大小过小: %d bytes", task.ContentSize)
+	}
+
 	// 2.5 跳过已存在的文件
 	if task.SkipIfExists && task.FileName != "" {
 		filePath := filepath.Join(task.SaveDir, task.FileName)
@@ -703,4 +708,30 @@ func truncateString(s string, maxLen int) string {
 		return s
 	}
 	return s[:maxLen-3] + "..."
+}
+
+// CreateVolumeDirectory 创建分卷目录
+// 在 baseDir 下创建 vol.XXXX 格式的子目录
+func CreateVolumeDirectory(baseDir, volumeId string) (string, error) {
+	if volumeId == "" {
+		volumeId = "0000"
+	}
+	dirName := "vol." + volumeId
+	dirPath := filepath.Join(baseDir, dirName)
+	if err := os.MkdirAll(dirPath, 0755); err != nil {
+		return "", fmt.Errorf("创建卷目录失败: %w", err)
+	}
+	return dirPath, nil
+}
+
+// ValidateFileSize 验证下载文件大小是否合法
+func ValidateFileSize(filePath string, minSize int64) error {
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("无法获取文件信息: %w", err)
+	}
+	if info.Size() < minSize {
+		return fmt.Errorf("文件大小 %d 小于最小限制 %d", info.Size(), minSize)
+	}
+	return nil
 }
