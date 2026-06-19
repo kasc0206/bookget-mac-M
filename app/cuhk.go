@@ -8,7 +8,6 @@ import (
 	"bookget/pkg/sharedmemory"
 	"bookget/pkg/util"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -44,16 +43,10 @@ type Cuhk struct {
 func NewCuhk() *Cuhk {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// 创建自定义 Transport 忽略 SSL 验证
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	jar, _ := cookiejar.New(nil)
+	client, _ := NewHttpClient()
 	return &Cuhk{
 		// 初始化字段
-		client: &http.Client{Timeout: config.Conf.Timeout * time.Second, Jar: jar, Transport: tr},
+		client: client,
 		ctx:    ctx,
 		cancel: cancel,
 	}

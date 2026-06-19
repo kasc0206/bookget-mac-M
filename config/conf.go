@@ -41,6 +41,8 @@ type Input struct {
 	FileExt string //指定下载的扩展名
 	Quality int    //JPG品质
 
+	SkipVerify bool //跳过 TLS 证书验证，访问自签名证书站点时使用
+
 	Help    bool
 	Version bool
 }
@@ -87,6 +89,8 @@ func Init(ctx context.Context) bool {
 	pflag.IntVar(&Conf.Sleep, "sleep", 3, "间隔睡眠几秒，一般情况 3-20")
 
 	pflag.IntVarP(&Conf.DownloaderMode, "downloader_mode", "m", 0, "下载模式。可选值[0|1|2]，;0=默认;\n1=通用批量下载（类似IDM、迅雷）;\n2= IIIF manifest.json 自动检测下载图片")
+
+	pflag.BoolVar(&Conf.SkipVerify, "insecure", false, "跳过 TLS 证书验证（访问自签名证书站点时使用）")
 
 	pflag.BoolVarP(&Conf.Help, "help", "h", false, "显示帮助")
 	pflag.BoolVarP(&Conf.Version, "version", "V", false, "显示版本 -v")

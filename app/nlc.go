@@ -6,7 +6,6 @@ import (
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"html"
@@ -20,7 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type ChinaNlc struct {
@@ -48,18 +46,13 @@ func NewChinaNlc() *ChinaNlc {
 	ctx, cancel := context.WithCancel(context.Background())
 	dm := downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent)
 
-	// 创建自定义 Transport 忽略 SSL 验证
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
+	client, _ := NewHttpClient()
 	jar, _ := cookiejar.New(nil)
 
 	return &ChinaNlc{
 		// 初始化字段
 		dm:           dm,
-		client:       &http.Client{Timeout: config.Conf.Timeout * time.Second, Jar: jar, Transport: tr},
+		client:       client,
 		ctx:          ctx,
 		cancel:       cancel,
 		jar:          jar,

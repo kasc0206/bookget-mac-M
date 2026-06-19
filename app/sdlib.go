@@ -6,20 +6,17 @@ import (
 	"bookget/pkg/chttp"
 	"bookget/pkg/downloader"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type Sdlib struct {
@@ -44,17 +41,11 @@ func NewSdlib() *Sdlib {
 	ctx, cancel := context.WithCancel(context.Background())
 	dm := downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent)
 
-	// 创建自定义 Transport 忽略 SSL 验证
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	jar, _ := cookiejar.New(nil)
+	client, _ := NewHttpClient()
 	return &Sdlib{
 		// 初始化字段
 		dm:     dm,
-		client: &http.Client{Timeout: config.Conf.Timeout * time.Second, Jar: jar, Transport: tr},
+		client: client,
 		ctx:    ctx,
 		cancel: cancel,
 	}

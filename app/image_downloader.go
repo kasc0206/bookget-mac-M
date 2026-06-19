@@ -6,19 +6,16 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/cookiejar"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"bookget/pkg/progressbar"
 )
@@ -40,17 +37,11 @@ type ImageDownloader struct {
 }
 
 func NewImageDownloader() *ImageDownloader {
-	// 创建自定义 Transport 忽略 SSL 验证
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
-	jar, _ := cookiejar.New(nil)
+	client, _ := NewHttpClient()
 
 	return &ImageDownloader{
 		// 初始化字段
-		client:            &http.Client{Timeout: config.Conf.Timeout * time.Second, Jar: jar, Transport: tr},
+		client:            client,
 		reader:            bufio.NewReader(os.Stdin),
 		hasVolPlaceholder: false,
 		maxConcurrent:     config.Conf.MaxConcurrent,
