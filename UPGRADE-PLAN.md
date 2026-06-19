@@ -264,6 +264,7 @@ type HTTPError struct {
 **说明**: 大量 `r.do()`、`bar.Add()`、`gohttp.FastGet()` 等调用的返回值未检查。绝大多数是设计上故意忽略的（进度条更新、日志等），修复成本高、收益低。
 
 **建议**:
+
 - 在 `.golangci.yml` 中禁用 `errcheck` linter，或添加 `//nolint:errcheck` 注释
 - 无需逐处修复
 
@@ -272,11 +273,13 @@ type HTTPError struct {
 ### P4.2 unused — 未使用的声明（~128 处）
 
 **说明**: 主要包括：
+
 1. **Stub 方法** — 为满足接口而实现但未实际调用的方法（如 `getVolumes`、`postBody` 等）
 2. **未使用的常量/变量** — `defaultTimeout`、`defaultFormat` 等
 3. **未使用的结构体字段** — 各下载器中的 `bufBuilder`、`urlsFile` 等
 
 **建议**:
+
 - Stub 方法：上游代码需要，不可删除
 - 未使用常量：可删除
 - 未使用字段：可清理
