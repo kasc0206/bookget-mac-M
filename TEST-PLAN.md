@@ -424,19 +424,29 @@ golangci-lint run                   # Lint 检查
 
 ## 测试记录表
 
-| 站点                                   | 测试日期 | 测试人 | 结果 | 备注 |
-| -------------------------------------- | -------- | ------ | :--: | ---- |
-| read.nlc.cn                            |          |        |  ⬜  |      |
-| taiwanebook.ncl.edu.tw                 |          |        |  ⬜  |      |
-| repository.lib.cuhk.edu.hk             |          |        |  ⬜  |      |
-| archive.wul.waseda.ac.jp               |          |        |  ⬜  |      |
-| dl.ndl.go.jp                           |          |        |  ⬜  |      |
-| babel.hathitrust.org                   |          |        |  ⬜  |      |
-| archive.org                            |          |        |  ⬜  |      |
-| www.loc.gov                            |          |        |  ⬜  |      |
-| digital.staatsbibliothek-berlin.de     |          |        |  ⬜  |      |
-| digital.bodleian.ox.ac.uk              |          |        |  ⬜  |      |
-| ... (完整列表见 `router/interface.go`) |          |        |  ⬜  |      |
+| 站点                                              | 测试日期   | 结果 | 备注                                              |
+| ------------------------------------------------- | ---------- | :--: | ------------------------------------------------- |
+| **中国站点**                                      |            |      |                                                   |
+| read.nlc.cn                                       | 2026-06-19 |  ✅  | 3.4MB JPEG, 2288×5392                            |
+| gzdd.gzlib.org.cn                                 | 2026-06-19 |  ✅  | 34MB PDF, 广州大典                               |
+| yun.szlib.org.cn                                  | 2026-06-19 |  ✅  | 120卷, 大容量需更多时间                           |
+| digicoll.lib.berkeley.edu                         | 2026-06-19 |  ✅  | 26 PDFs, 565MB                                   |
+| emuseum.nich.go.jp                                | 2026-06-19 |  ✅  | IIIF tiles, 5000×4789, 2页                    |
+| archive.org                                       | 2026-06-19 |  ✅  | IIIF tiles合并                                   |
+| iiif (Keio)                                       | 2026-06-19 |  ✅  | 132 tiles → 2732×3040                           |
+| archive.wul.waseda.ac.jp                          | 2026-06-19 |  ✅  | 18卷, 1755页                                     |
+| digital.staatsbibliothek-berlin.de                | 2026-06-19 |  ⚠️  | IIIF tile部分404, 第1页成功, 需修复服务器兼容    |
+| 111.7.82.29:8090 (luoyang)                        | 2026-06-19 |  ⚠️  | 找到PDF但下载暂停(服务器慢)                    |
+| dl.ndl.go.jp                                      | 2026-06-19 |  ⚠️  | 67/223成功, 大量403(区域限制)               |
+| taiwanebook.ncl.edu.tw                            | 2026-06-19 |  ⚠️  | 识别4个PDF但下载暂停                           |
+| repository.lib.cuhk.edu.hk                        | 2026-06-19 |  ⚠️  | 需要CAPTCHA真人验证                           |
+| catalog.princeton.edu                             | 2026-06-19 |  ⚠️  | 识别7卷/350页但下载暂停                       |
+| iiif.lib.harvard.edu                              | 2026-06-19 |  ❌  | 403 Forbidden                                     |
+| www.loc.gov                                       | 2026-06-19 |  ❌  | 未下载到文件                                      |
+| digital.bodleian.ox.ac.uk                         | 2026-06-19 |  ❌  | 未下载到文件                                      |
+| www.bl.uk                                         | 2026-06-19 |  ❌  | 未下载到文件                                      |
+| babel.hathitrust.org                              | 2026-06-19 |  ❌  | Forbidden (区域限制)                              |
+| ostasien.digitale-sammlungen.de                   | 2026-06-19 |  ❌  | IIIF info.json未识别                             |
 
 ---
 

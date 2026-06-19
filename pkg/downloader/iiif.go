@@ -498,7 +498,10 @@ func (d *IIIFDownloader) downloadIIIFv3Tiles(ctx context.Context, info *IIIFInfo
 
 				// 下载瓦片图像
 				img, err := d.downloadImageWithRetry(ctx, tileURL, headers, d.maxRetries)
-				if err != nil {
+				if err != nil || img == nil {
+					if err == nil {
+						err = fmt.Errorf("tile image is nil")
+					}
 					select {
 					case errChan <- fmt.Errorf("download tile(%d,%d) error: %v", x, y, err):
 					default:
@@ -590,7 +593,10 @@ func (d *IIIFDownloader) downloadAndMergeXMLTiles(ctx context.Context, info *III
 				}
 
 				img, err := d.downloadImage(ctx, tileURL, headers)
-				if err != nil {
+				if err != nil || img == nil {
+					if err == nil {
+						err = fmt.Errorf("tile image is nil")
+					}
 					select {
 					case errChan <- fmt.Errorf("下载拼图(%d,%d)失败: %v", x, y, err):
 					default:
@@ -795,10 +801,6 @@ func (d *IIIFDownloader) downloadImage(ctx context.Context, url string, headers 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		//404 || 500
-		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusInternalServerError {
-			return nil, nil
-		}
 		return nil, fmt.Errorf("服务器返回错误状态码: %d", resp.StatusCode)
 	}
 
