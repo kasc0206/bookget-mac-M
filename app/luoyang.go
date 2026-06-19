@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
@@ -17,12 +18,14 @@ import (
 
 type Luoyang struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewLuoyang() *Luoyang {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Luoyang{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -75,23 +78,14 @@ func (p *Luoyang) download() (msg string, err error) {
 }
 
 func (p *Luoyang) do(dest, pdfUrl string) (msg string, err error) {
-	ctx := context.Background()
-	opts := gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: config.Conf.Threads,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		CookieJar:   p.dt.Jar,
-		Headers: map[string]interface{}{
-			"User-Agent": config.Conf.UserAgent,
-		},
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
 	}
-	_, err = gohttp.FastGet(ctx, pdfUrl, opts)
-	if err != nil {
-		fmt.Println(err)
+	p.dm.AddFromLegacy(pdfUrl, "GET", headers, nil, filepath.Dir(dest), filepath.Base(dest), config.Conf.Threads, p.dt.Jar, false)
+	if len(p.dm.Tasks()) > 0 {
+		p.dm.Start()
 	}
-	return "", err
+	return "", nil
 }
 
 func (p *Luoyang) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {

@@ -3,26 +3,27 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/wzlib"
-	"bookget/pkg/gohttp"
+	"bookget/pkg/downloader"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 )
 
 type Wzlib struct {
 	dt       *DownloadTask
+	dm       *downloader.DownloadManager
 	pdfNames map[string]string
 }
 
 func NewWzlib() *Wzlib {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Wzlib{
-		// 初始化字段
 		dt:       new(DownloadTask),
+		dm:       downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 		pdfNames: make(map[string]string),
 	}
 }
@@ -77,12 +78,10 @@ func (p *Wzlib) download() (msg string, err error) {
 
 func (p *Wzlib) do(dUrls []string) (msg string, err error) {
 	if dUrls == nil {
-		return
+		return "", nil
 	}
-	fmt.Println()
 	size := len(dUrls)
 	log.Printf(" %d PDFs.\n", size)
-	ctx := context.Background()
 	for i, uri := range dUrls {
 		if !config.PageRange(i, size) {
 			continue
@@ -96,27 +95,12 @@ func (p *Wzlib) do(dUrls []string) (msg string, err error) {
 		if filename == "" {
 			filename = BuildOutputFileName(".pdf", p.dt.Title, sortId)
 		}
-		dest := path.Join(p.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: config.Conf.Threads,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   p.dt.Jar,
-		}
-		_, err = gohttp.FastGet(ctx, uri, opts)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		fmt.Println()
+		p.dm.AddFromLegacy(uri, "GET", nil, nil, p.dt.SavePath, filename, config.Conf.Threads, p.dt.Jar, true)
 	}
-	fmt.Println()
-	return "", err
+	if len(p.dm.Tasks()) > 0 {
+		p.dm.Start()
+	}
+	return "", nil
 }
 
 func (p *Wzlib) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {

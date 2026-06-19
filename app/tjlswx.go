@@ -2,26 +2,27 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
 )
 
 type Tjlswx struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewTjlswx() *Tjlswx {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Tjlswx{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -81,44 +82,18 @@ func (r Tjlswx) download() (msg string, err error) {
 
 func (r Tjlswx) do(imgUrls []string) (msg string, err error) {
 	if imgUrls == nil {
-		return
+		return "", nil
 	}
-	fmt.Println()
 	referer := url.QueryEscape(r.dt.Url)
-	size := len(imgUrls)
-	ctx := context.Background()
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		log.Printf("Get %d/%d page, URL: %s\n", i+1, size, uri)
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-				"Referer":    referer,
-			},
-		}
-		_, err = gohttp.FastGet(ctx, uri, opts)
-		if err != nil {
-			fmt.Println(err)
-			util.PrintSleepTime(config.Conf.Sleep)
-		}
-		fmt.Println()
+	headers := map[string]string{
+		"User-Agent": config.Conf.UserAgent,
+		"Referer":    referer,
 	}
-	fmt.Println()
-	return "", err
+	r.dm.AddImageTasks(imgUrls, r.dt.SavePath, config.Conf.FileExt, 0, headers, r.dt.Jar, true)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return "", nil
 }
 
 func (r Tjlswx) getVolumes(_ string, jar *cookiejar.Jar) (volumes []string, err error) {

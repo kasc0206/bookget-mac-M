@@ -18,6 +18,7 @@ import (
 
 type War1931 struct {
 	dt              *DownloadTask
+	dm              *downloader.DownloadManager
 	docType         string
 	fileCode        string
 	jsonUrlTemplate string
@@ -25,10 +26,11 @@ type War1931 struct {
 }
 
 func NewWar1931() *War1931 {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &War1931{
-		// 初始化字段
 		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dm:  downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 

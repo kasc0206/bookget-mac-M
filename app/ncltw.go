@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/pkg/chttp"
+	"bookget/pkg/downloader"
 	xhash "bookget/pkg/hash"
 	"bookget/pkg/sharedmemory"
 	"bookget/pkg/util"
@@ -25,6 +26,7 @@ type NlcTw struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 	client *http.Client
+	dm     *downloader.DownloadManager
 
 	bufBuilder strings.Builder
 	bufString  string
@@ -48,6 +50,7 @@ func (r *NlcTw) NewNlcTw() *NlcTw {
 		client: client,
 		ctx:    ctx,
 		cancel: cancel,
+		dm:     downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 func (d *NlcTw) GetRouterInit(rawUrl string) (map[string]interface{}, error) {
