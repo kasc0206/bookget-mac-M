@@ -424,31 +424,106 @@ golangci-lint run                   # Lint 检查
 
 ## 测试记录表
 
-| 站点                               | 测试日期   | 结果 | 备注                                          |
-| ---------------------------------- | ---------- | :--: | --------------------------------------------- |
-| **中国站点**                       |            |      |                                               |
-| read.nlc.cn                        | 2026-06-19 |  ✅  | 3.4MB JPEG, 2288×5392                         |
-| gzdd.gzlib.org.cn                  | 2026-06-19 |  ✅  | 34MB PDF, 广州大典                            |
-| yun.szlib.org.cn                   | 2026-06-19 |  ✅  | 120卷, 大容量需更多时间                       |
-| digicoll.lib.berkeley.edu          | 2026-06-19 |  ✅  | 26 PDFs, 565MB                                |
-| emuseum.nich.go.jp                 | 2026-06-19 |  ✅  | IIIF tiles, 5000×4789, 2页                    |
-| archive.org                        | 2026-06-19 |  ✅  | IIIF tiles合并                                |
-| iiif (Keio)                        | 2026-06-19 |  ✅  | 132 tiles → 2732×3040                         |
-| archive.wul.waseda.ac.jp           | 2026-06-19 |  ✅  | 18卷, 1755页                                  |
-| digital.staatsbibliothek-berlin.de | 2026-06-19 |  ⚠️  | IIIF tile部分404, 第1页成功, 需修复服务器兼容 |
-| 111.7.82.29:8090 (luoyang)         | 2026-06-19 |  ⚠️  | 找到PDF但下载暂停(服务器慢)                   |
-| dl.ndl.go.jp                       | 2026-06-19 |  ⚠️  | 67/223成功, 大量403(区域限制)                 |
-| taiwanebook.ncl.edu.tw             | 2026-06-19 |  ⚠️  | 识别4个PDF但下载暂停                          |
-| repository.lib.cuhk.edu.hk         | 2026-06-19 |  ⚠️  | 需要CAPTCHA真人验证                           |
-| catalog.princeton.edu              | 2026-06-19 |  ⚠️  | 识别7卷/350页但下载暂停                       |
-| iiif.lib.harvard.edu               | 2026-06-19 |  ❌  | 403 Forbidden                                 |
-| www.loc.gov                        | 2026-06-19 |  ❌  | 未下载到文件                                  |
-| digital.bodleian.ox.ac.uk          | 2026-06-19 |  ❌  | 未下载到文件                                  |
-| www.bl.uk                          | 2026-06-19 |  ❌  | 未下载到文件                                  |
-| babel.hathitrust.org               | 2026-06-19 |  ❌  | Forbidden (区域限制)                          |
-| ostasien.digitale-sammlungen.de    | 2026-06-19 |  ❌  | IIIF info.json未识别                          |
+| 站点                               | 测试日期   | 结果 | 诊断说明                                                    |
+| ---------------------------------- | ---------- | :--: | ----------------------------------------------------------- |
+| **中国站点**                       |            |      |                                                             |
+| read.nlc.cn                        | 2026-06-19 |  ✅  | 3.4MB JPEG, 2288×5392                                      |
+| gzdd.gzlib.org.cn                  | 2026-06-19 |  ✅  | 34MB PDF 下载成功                                           |
+| yun.szlib.org.cn                   | 2026-06-19 |  ✅  | 120卷, 大容量需更多时间                                     |
+| taiwanebook.ncl.edu.tw             | 2026-06-19 |  ✅  | 修复: httpClient() 增加 DisableKeepAlives: true             |
+| 111.7.82.29:8090 (luoyang)         | 2026-06-19 |  ✅  | 332MB PDF 下载成功(1m4s,服务器慢非bug)                   |
+| catalog.princeton.edu              | 2026-06-19 |  ✅  | 350页/7卷, 全部成功(4min,大容量非bug)           |
+| ouroots.nlc.cn                     | —          |  ⬜  | 未测试                                                      |
+| jsgxgj.nju.edu.cn                  | —          |  ⬜  | 未测试                                                      |
+| lbezone.hkust.edu.hk               | —          |  ⬜  | 未测试                                                      |
+| digitalrepository.lib.hku.hk       | —          |  ⬜  | 未测试                                                      |
+| repository.lib.cuhk.edu.hk         | 2026-06-19 |  ⚠️  | AWS WAF Challenge, 实现3层策略(cookie→chromedp→手动) |
+| dl.ndl.go.jp                       | 2026-06-19 |  ⚠️  | IIIF图片服务器受AWS WAF+CloudFront保护,需浏览器             |
+| www.ncpssd.org                     | —          |  ⬜  | 未测试                                                      |
+| oyjy.wzlib.cn                      | —          |  ⬜  | 未测试                                                      |
+| gj.tianyige.com.cn                 | —          |  ⬜  | 未测试                                                      |
+| dfz.yn.gov.cn                      | —          |  ⬜  | 未测试                                                      |
+| dlib.cafa.edu.cn                   | —          |  ⬜  | 未测试                                                      |
+| 124.134.220.209:8100 (zhucheng)    | —          |  ⬜  | 未测试                                                      |
+| **日本站点**                       |            |      |                                                             |
+| archive.wul.waseda.ac.jp           | 2026-06-19 |  ✅  | 18卷1755页,全部成功                                         |
+| emuseum.nich.go.jp                 | 2026-06-19 |  ✅  | IIIF tiles, 5000×4789                                      |
+| iiif (Keio Univ)                   | 2026-06-19 |  ✅  | 132 tiles → 2732×3040                                      |
+| dl.ndl.go.jp                       | 2026-06-19 |  ⚠️  | AWS WAF保护IIIF图片服务器（见上）                         |
+| db2.sido.keio.ac.jp                | —          |  ⬜  | 未测试                                                      |
+| shanben.ioc.u-tokyo.ac.jp          | —          |  ⬜  | 未测试                                                      |
+| www.digital.archives.go.jp         | —          |  ⬜  | 未测试                                                      |
+| dsr.nii.ac.jp                      | —          |  ⬜  | 未测试                                                      |
+| kokusho.nijl.ac.jp                 | —          |  ⬜  | 未测试                                                      |
+| kanji.zinbun.kyoto-u.ac.jp         | —          |  ⬜  | 未测试                                                      |
+| khirin-a.rekihaku.ac.jp            | —          |  ⬜  | 未测试                                                      |
+| www.library.yonezawa.yamagata.jp   | —          |  ⬜  | 未测试                                                      |
+| webarchives.tnm.jp                 | —          |  ⬜  | 未测试                                                      |
+| da.library.ryukoku.ac.jp           | —          |  ⬜  | 未测试                                                      |
+| **美国站点**                       |            |      |                                                             |
+| archive.org                        | 2026-06-19 |  ✅  | IIIF tiles合并                                              |
+| digicoll.lib.berkeley.edu          | 2026-06-19 |  ✅  | 26 PDFs, 565MB                                              |
+| catalog.princeton.edu              | 2026-06-19 |  ✅  | 350页, 9714×8241高分辨率IIIF                               |
+| www.loc.gov                        | 2026-06-19 |  ❌  | URL格式不匹配? 需检查loc.go解析逻辑                      |
+| iiif.lib.harvard.edu               | 2026-06-19 |  ❌  | 403 Forbidden (可能需特定Referer)                         |
+| babel.hathitrust.org               | 2026-06-19 |  ❌  | Forbidden (IP区域限制)                                      |
+| dpul.princeton.edu                 | —          |  ⬜  | 未测试(备选URL)                                             |
+| ids.si.edu                         | —          |  ⬜  | 未测试                                                      |
+| www.familysearch.org               | —          |  ⬜  | 未测试(需微卷URL格式)                                       |
+| **欧洲站点**                       |            |      |                                                             |
+| digital.staatsbibliothek-berlin.de | 2026-06-19 |  ⚠️  | 第1页104 tiles成功,后续页tile 404(服务器兼容)         |
+| www.digitale-sammlungen.de         | 2026-06-19 |  ❌  | IIIF info.json格式不被识别,需检查dezoomify逻辑          |
+| digital.bodleian.ox.ac.uk          | 2026-06-19 |  ❌  | URL解析失败? 需检查oxacuk.go                              |
+| www.bl.uk                          | 2026-06-19 |  ❌  | HTML解析失败,需检查bluk.go                                |
+| digital.onb.ac.at                  | —          |  ⬜  | 未测试                                                      |
+| **其他站点**                       |            |      |                                                             |
+| idp.nlc.cn                         | —          |  ⬜  | 未测试(需先搜索获取uid)                                     |
+| kyudb.snu.ac.kr                    | —          |  ⬜  | 未测试                                                      |
+| viewer.rsl.ru                      | —          |  ⬜  | 未测试                                                      |
+| lib.nomfoundation.org              | —          |  ⬜  | 未测试                                                      |
+| hannom.nlv.gov.vn                  | —          |  ⬜  | 未测试                                                      |
 
 ---
+
+## 已修复的 Bug 汇总
+
+| Bug | 文件 | 修复内容 | 影响站点 |
+|-----|------|---------|---------|
+| **IIIF nil pointer crash** | `pkg/downloader/iiif.go:792` | `downloadImage()` 对 404/500 返回 `(nil, nil)` 改为返回 error；goroutine 中加 `img == nil` 检查 | 柏林国立图书馆、所有 IIIF tile 下载 |
+| **unexpected EOF (keep-alive)** | `pkg/downloader/downloader.go:670` | `httpClient()` 增加 `DisableKeepAlives: true`，防止 HEAD→GET 序列中 keep-alive 连接被服务器关闭 | 台湾华文电子书库、洛阳市图书馆、所有 PDF/大文件下载 |
+| **CUHK 共享内存在 Unix 上为空** | `app/cuhk.go` | 重写整个下载器：移除不工作的 `sharedmemory`，改为 `chromedp` + cookie 文件 + 手动引导 3 层策略 | CUHK |
+| **nil buffer 崩溃** | `pkg/downloader/downloader.go:318` | `Download()` 中增加 `if task.buffer == nil { task.buffer = bytes.NewBuffer(nil) }` | 所有使用 `AddFromLegacy`/`AddImageTasks` 的站点 |
+
+---
+
+## 未成功站点分析
+
+### AWS WAF / CloudFront Challenge（需浏览器）
+
+这两个站点使用 AWS WAF 保护 IIIF 图片服务器，自动化工具无法直接访问：
+
+| 站点 | WAF 类型 | 推荐方案 |
+|------|---------|---------|
+| repository.lib.cuhk.edu.hk | AWS WAF Challenge (x-amzn-waf-action: challenge) | `--cookie cookie.txt` 从浏览器导出 |
+| dl.ndl.go.jp (IIIF images) | AWS WAF + CloudFront | 同上 |
+
+**现状**: `pkg/chromedphelper` 已实现 chromedp 自动绕过，但 AWS WAF 的 JS proof-of-work 在 headless Chrome 下 timeout（60s 不够）。Playwright + 真实 Chromium 同样无法在 60s 内完成。
+
+### URL 格式/解析问题（需代码审查）
+
+| 站点 | 现象 | 可能原因 |
+|------|------|---------|
+| www.loc.gov | 返回空（无文件下载） | `loc.go` 的 HTML 解析逻辑可能与当前 LOC 网站 HTML 结构不匹配 |
+| digital.bodleian.ox.ac.uk | 未下载到文件 | `oxacuk.go` URL 格式检测或 manifest 解析问题 |
+| www.bl.uk | 返回 `<nil>` | `bluk.go` 的 `getBody` 返回空 body |
+| www.digitale-sammlungen.de | IIIF info.json 未识别 | `dezoomify` 的 IIIF 版本检测逻辑不兼容该站格式 |
+
+### IP 区域限制
+
+| 站点 | 限制 |
+|------|------|
+| babel.hathitrust.org | 需要美国 IP |
+| iiif.lib.harvard.edu | 403 (可能需特定 Referer) |
 
 ## 常见问题
 
