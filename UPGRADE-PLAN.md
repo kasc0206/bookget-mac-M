@@ -134,28 +134,164 @@ func NewInsecureClient(timeout time.Duration) *http.Client {
 
 **现状**: 项目中存在两套下载体系共存
 
-| 模式                     | 代表文件                       | 特征                                               |
-| ------------------------ | ------------------------------ | -------------------------------------------------- |
-| 旧模式 `DownloadTask`    | `app/template.go`              | 使用 `gohttp` + `QueueLimit`，各下载器自己管理并发 |
-| 新模式 `DownloadManager` | `pkg/downloader/downloader.go` | 集中式任务管理，统一进度条、重试、并发控制         |
+| 模式 | 代表文件 | 特征 | 下载器数量 |
+|------|---------|------|:---------:|
+| 旧模式 `dt *DownloadTask` | `app/template.go` | 使用 `gohttp.FastGet()` + `QueueNew()` 并发，各下载器自行管理 | **45 个** |
+| 新模式 `dm *DownloadManager` | `pkg/downloader/downloader.go` | 集中式任务管理、统一进度条、Range 分片下载 | **8 个** |
+| 独立模式 `client *http.Client` | `cuhk.go`, `nlcguji.go` | 自建 HTTP 客户端，通过共享内存与 GUI 通信 | **3 个** |
 
-**迁移计划**:
+**旧模式未覆盖的缺失功能（迁移前需补齐）**:
+
+| 缺失功能 | 影响 | 说明 |
+|---------|------|------|
+| `cookiejar.Jar` 透传 | 🔴 高 | 许多站点依赖 CookieJar 自动管理会话，`DownloadManager` 目前只支持字符串 Cookie |
+| `FileExist()` 跳过检查 | 🔴 高 | `if FileExist(dest) { continue }` 出现在几乎所有 `do()` 方法中 |
+| IIIF/DZI 集成 | 🔴 高 | `iiif.go` 的 `doDezoomify()` 走独立通路，不经过 `DownloadManager` |
+| `QueueLimit` 替代 | 🟡 中 | 旧模式每个下载器有独立协程池，`DownloadManager` 是全局信号量 |
+| 自定义请求头 | 🟡 中 | `berlin.go`/`iiif.go` 的 `doDezoomify()` 传递 `-H` 参数 |
+| 图片验证 | 🟢 低 | `image_downloader.go` 检查 `minFileSize`（已定义但未使用） |
+| GUI 共享内存 | 🟢 低 | `getBodyByGui()` 通过共享内存与 `bookget-gui` 通信 |
+
+---
+
+#### 阶段 1（P2.2a）: 增强 DownloadManager
+
+**目标**: 补齐缺失功能，使 `DownloadManager` 能覆盖旧模式所有使用场景
+
+**任务清单**:
 
 ```
-阶段 1（P2.2a）: 为 DownloadManager 添加缺失功能
-  - 单任务进度条（基于字节数）
-  - 暂停/恢复能力
-  - 回调通知
+[ ] P2.2a-1 添加 CookieJar 支持
+    - DownloadTask 新增 Jar *cookiejar.Jar 字段
+    - Download() 方法中，若 Jar 非空则使用 Jar 创建请求
+    - 向后兼容：Jar 为空时仍使用 Headers 中的 Cookie 字符串
 
-阶段 2（P2.2b）: 挑选 2-3 个典型下载器迁移
-  - 目标: app/waseda.go, app/ndljp.go, app/harvard.go
-  - 验证新架构的通用性
+[ ] P2.2a-2 添加 FileExist 跳过机制
+    - DownloadTask 新增 SkipIfExists bool 字段
+    - 在 Download() 写入文件前检查目标文件是否存在
+    - 跳过时记录到日志但计入成功计数
 
-阶段 3（P2.2c）: 批量迁移剩余下载器
-  - 可分批进行，每批 5-10 个
+[ ] P2.2a-3 集成 IIIF/DZI 下载
+    - 将 downloader/iiif.go 的 IIIFDownloader.Dezoomify() 封装为
+      DownloadManager 方法
+    - 支持传递自定义 Args（-H 参数等）
+
+[ ] P2.2a-4 添加分卷目录创建辅助方法
+    - 实现 CreateVolumeDirectory(baseDir, volumeId) 替代
+      app.CreateDirectory()
+    - 返回规范化的目录路径
+
+[ ] P2.2a-5 添加图片验证
+    - 下载完成后检查文件大小 >= minFileSize（设为 0 则跳过检查）
+    - 0 字节文件自动标记失败并重试
 ```
 
-**预计耗时**: 8-12 小时（全阶段）
+---
+
+#### 阶段 2（P2.2b）: 创建 CodeMod 迁移脚本
+
+**目标**: 编写脚本/工具辅助批量迁移，而非手动修改 45 个文件
+
+**任务清单**:
+
+```
+[ ] P2.2b-1 分析旧模式下载器的 do() 方法模式
+    - 归纳为 N 种模板模式（如：纯图片、PDF、IIIF、混合）
+    - 为每种模板编写迁移映射
+
+[ ] P2.2b-2 创建迁移辅助函数
+    - 在 DownloadManager 中添加 UploadFromLegacy() 方法
+    - 从 DownloadTask 自动填充 DownloadManager 任务参数：
+      URL → URL, Jar → Jar, Headers → Headers
+    - 保留兼容接口让旧代码能逐步切换
+
+[ ] P2.2b-3 测试迁移辅助函数
+    - 编写单元测试验证辅助函数的正确性
+    - 至少覆盖：图片、PDF、IIIF 三种场景
+```
+
+---
+
+#### 阶段 3（P2.2c）: 试点迁移 3 个典型下载器
+
+**目标**: 验证架构完备性，发现遗漏问题
+
+**选择标准**:
+
+| 下载器 | 选择理由 | 测试场景 |
+|--------|---------|---------|
+| `app/waseda.go` | 纯图片下载，最简单场景 | 基线验证 |
+| `app/ndljp.go` | PDF + 图片混合，多册 | 多类型验证 |
+| `app/harvard.go` | IIIF 协议，当前已用新模式但可做对比 | IIIF 验证 |
+
+**任务清单**:
+
+```
+[ ] P2.2c-1 迁移 waseda.go（纯图片）
+[ ] P2.2c-2 迁移 ndljp.go（PDF + 图片）
+[ ] P2.2c-3 迁移 harvard.go（IIIF）
+[ ] P2.2c-4 全量测试回归
+[ ] P2.2c-5 记录迁移过程中发现的缺口，补回 P2.2a
+```
+
+---
+
+#### 阶段 4（P2.2d）: 批量迁移（按依赖分组）
+
+**目标**: 完成所有 45 个旧模式下载器的迁移
+
+**分组策略**:
+
+```
+第 1 批（简单图片，~10 个）:
+  简单 GET 下载图片，无特殊认证
+  → emuseum, keio, khirin, kokusho, kyotou,
+     niiac, nomfoundation, onbdigital, ouroots, oxacuk
+
+第 2 批（PDF + 图片，~10 个）:
+  混合下载 PDF 和图片
+  → bluk, dzicnlib, gslib, hkulib, huawen,
+     korea, njuedu, rslru, sammlungen, siedu
+
+第 3 批（需要 CookieJar，~10 个）:
+  依赖会话管理
+  → cafaedu, hannomnlv, nationaljp, ncpssd,
+     princeton, ryukoku, sdutcm, szlib, tianyige, usthk
+
+第 4 批（IIIF 协议，~8 个）:
+  通过 IIIF manifest 获取图片
+  → berkeley, cuhk, idp, ndljp, tnm, utokyo, yndfz, zhucheng
+
+第 5 批（特殊逻辑，~7 个）:
+  有特殊解析或认证逻辑
+  → hathitrust, luoyang, ncltw, tjlswx, war1931, wzlib, yonezawa
+```
+
+**每批包含**:
+
+```
+[ ] 迁移下载器本体（do()/getVolumes()/getCanvases()）
+[ ] 移除对 gohttp.FastGet()/QueueNew() 的依赖
+[ ] 如果可能，移除对 gohttp 的导入
+[ ] 编译验证
+[ ] 更新测试
+```
+
+---
+
+#### 最终清理（P2.2e）
+
+**任务清单**:
+
+```
+[ ] 确认所有旧模式下载器已迁移
+[ ] 移除不再需要的 gohttp 依赖（如果所有下载器都迁移完毕）
+[ ] 移除 app/queue.go（QueueNew 不再使用）
+[ ] 考虑将 app/template.go 中的共享函数迁移到 pkg/ 下
+[ ] 更新 README 和文档
+```
+
+**预计耗时**: 16-24 小时（全阶段，含测试和验证）
 
 ---
 
