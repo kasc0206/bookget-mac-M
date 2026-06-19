@@ -118,6 +118,77 @@ func TestAddTask_ClampThreads(t *testing.T) {
 	}
 }
 
+func TestAddFromLegacy(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dm := NewDownloadManager(ctx, cancel, 4)
+	headers := map[string]string{"Referer": "http://example.com"}
+	dm.AddFromLegacy("http://example.com/img.jpg", "GET", headers, nil, "/tmp", "img.jpg", 2, nil, true)
+
+	if len(dm.tasks) != 1 {
+		t.Fatalf("tasks = %d, want 1", len(dm.tasks))
+	}
+	task := dm.tasks[0]
+	if task.URL != "http://example.com/img.jpg" {
+		t.Errorf("URL = %s", task.URL)
+	}
+	if task.Threads != 2 {
+		t.Errorf("Threads = %d, want 2", task.Threads)
+	}
+	if task.SkipIfExists != true {
+		t.Error("SkipIfExists should be true")
+	}
+	if task.Jar != nil {
+		t.Error("Jar should be nil")
+	}
+	if task.Headers["Referer"] != "http://example.com" {
+		t.Errorf("Referer = %s", task.Headers["Referer"])
+	}
+}
+
+func TestAddFromLegacy_WithJar(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	jar, _ := cookiejar.New(nil)
+	dm := NewDownloadManager(ctx, cancel, 4)
+	dm.AddFromLegacy("http://example.com/img.jpg", "GET", nil, nil, "/tmp", "img.jpg", 1, jar, false)
+
+	if dm.tasks[0].Jar != jar {
+		t.Error("Jar was not propagated")
+	}
+}
+
+func TestAddImageTasks(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	dm := NewDownloadManager(ctx, cancel, 8)
+	urls := []string{
+		"http://example.com/001.jpg",
+		"http://example.com/002.jpg",
+		"",
+		"http://example.com/003.jpg",
+	}
+	count := dm.AddImageTasks(urls, "/tmp", ".jpg", 0, nil, nil, true)
+	if count != 3 {
+		t.Fatalf("count = %d, want 3", count)
+	}
+	if len(dm.tasks) != 3 {
+		t.Fatalf("tasks = %d, want 3", len(dm.tasks))
+	}
+	if dm.tasks[0].FileName != "0001.jpg" {
+		t.Errorf("FileName[0] = %s, want 0001.jpg", dm.tasks[0].FileName)
+	}
+	if dm.tasks[1].FileName != "0002.jpg" {
+		t.Errorf("FileName[1] = %s, want 0002.jpg", dm.tasks[1].FileName)
+	}
+	if dm.tasks[2].FileName != "0004.jpg" {
+		t.Errorf("FileName[2] = %s, want 0004.jpg (skipped empty URL)", dm.tasks[2].FileName)
+	}
+}
+
 func TestCreateVolumeDirectory(t *testing.T) {
 	baseDir := t.TempDir()
 	dirPath, err := CreateVolumeDirectory(baseDir, "0001")

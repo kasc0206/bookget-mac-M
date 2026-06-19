@@ -127,6 +127,52 @@ func (dm *DownloadManager) AddDziTask(url, dest string, args []string) {
 	})
 }
 
+// AddFromLegacy 从旧模式参数添加下载任务（迁移辅助）
+// url: 下载URL；method: HTTP方法；headers: 请求头；body: POST数据
+// saveDir: 保存目录；filename: 文件名；threads: 线程数
+// jar: CookieJar（可选）；skipIfExists: 是否跳过已存在文件
+func (dm *DownloadManager) AddFromLegacy(url, method string, headers map[string]string, body []byte, saveDir, filename string, threads int, jar *cookiejar.Jar, skipIfExists bool) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	if threads <= 0 {
+		threads = 1
+	} else if threads > maxConcurrent {
+		threads = maxConcurrent
+	}
+
+	task := &DownloadTask{
+		URL:          url,
+		Method:       method,
+		Headers:      headers,
+		Body:         body,
+		SaveDir:      saveDir,
+		FileName:     filename,
+		Threads:      threads,
+		Jar:          jar,
+		SkipIfExists: skipIfExists,
+	}
+	dm.tasks = append(dm.tasks, task)
+}
+
+// AddImageTasks 批量添加图片下载任务（适用于旧模式 do() 中的循环）
+// urls: 图片URL列表；saveDir: 保存目录；ext: 扩展名；startIndex: 起始序号
+// headers: 请求头；jar: CookieJar；skipExisting: 是否跳过已存在文件
+func (dm *DownloadManager) AddImageTasks(urls []string, saveDir, ext string, startIndex int, headers map[string]string, jar *cookiejar.Jar, skipExisting bool) int {
+	count := 0
+	for i, imgUrl := range urls {
+		if imgUrl == "" {
+			continue
+		}
+		sortID := fmt.Sprintf("%04d", startIndex+i+1)
+		filename := sortID + ext
+
+		dm.AddFromLegacy(imgUrl, "GET", headers, nil, saveDir, filename, 1, jar, skipExisting)
+		count++
+	}
+	return count
+}
+
 // SetBar 设置进度条
 func (dm *DownloadManager) SetBar(maxTasks int) {
 	dm.mu.Lock()
