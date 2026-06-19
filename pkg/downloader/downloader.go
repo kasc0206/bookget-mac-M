@@ -56,7 +56,6 @@ type DownloadManager struct {
 	maxConcurrent int
 	successCount  int32
 	failCount     int32
-	totalTasks    int   // 总任务数
 	completed     int32 // 已完成任务数
 	wg            sync.WaitGroup
 	sem           chan struct{}
@@ -64,7 +63,6 @@ type DownloadManager struct {
 	cancel        context.CancelFunc
 	mu            sync.Mutex
 
-	started    bool      // 标记是否已开始
 	showPrompt bool      // 是否显示开始提示
 	allDone    bool      // 标记所有任务是否已完成
 	startTime  time.Time // 记录开始时间
@@ -243,20 +241,7 @@ func (dm *DownloadManager) Start() {
 	dm.mu.Unlock()
 }
 
-// getTasksToProcess 获取待处理的任务
-func (dm *DownloadManager) getTasksToProcess() []*DownloadTask {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
 
-	// 找出所有未处理的任务(Success为默认值false且ErrorMessage为空)
-	var tasks []*DownloadTask
-	for _, task := range dm.tasks {
-		if !task.Success && task.ErrorMessage == "" {
-			tasks = append(tasks, task)
-		}
-	}
-	return tasks
-}
 
 // Tasks 返回当前待处理的任务列表
 func (dm *DownloadManager) Tasks() []*DownloadTask {
@@ -741,27 +726,7 @@ func getExtensionFromMime(mimeType string) string {
 	}
 }
 
-// 辅助函数: 格式化字节大小
-func formatBytes(b int64) string {
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %ciB", float64(b)/float64(div), "KMGTPE"[exp])
-}
 
-// 辅助函数: 截断字符串
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
 
 // CreateVolumeDirectory 创建分卷目录
 // 在 baseDir 下创建 vol.XXXX 格式的子目录

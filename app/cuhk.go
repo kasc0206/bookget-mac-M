@@ -30,7 +30,6 @@ type Cuhk struct {
 	client *http.Client
 
 	responseBody []byte
-	tmpFile      string
 	urlsFile     string
 	bufBuilder   strings.Builder
 	bufBody      string

@@ -30,7 +30,6 @@ type Harvard struct {
 	client *http.Client
 	dm     *downloader.DownloadManager
 
-	tmpFile    string
 	urlsFile   string
 	bufBuilder strings.Builder
 	bufBody    []byte

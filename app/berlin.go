@@ -26,9 +26,7 @@ type Berlin struct {
 	client *http.Client
 
 	bufBuilder strings.Builder
-	bufString  string
 	bufBody    []byte
-	canvases   []string
 	urlsFile   string
 
 	rawUrl    string

@@ -26,8 +26,6 @@ type LodNLGoKr struct {
 	cancel context.CancelFunc
 	client *http.Client
 
-	urlsFile   string
-	bufBuilder strings.Builder
 	bufBody    string
 	canvases   []string
 

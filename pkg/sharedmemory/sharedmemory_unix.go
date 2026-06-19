@@ -2,10 +2,6 @@
 
 package sharedmemory
 
-import (
-	"unsafe"
-)
-
 const (
 	MEM_NAME   = "Local\\WebView2SharedMemory"
 	MUTEX_NAME = "Local\\WebView2SharedMemoryMutex"
@@ -24,15 +20,7 @@ type SharedMemoryData struct {
 	HTML           [1024 * 1024 * 8]uint16 // 8MB
 }
 
-// 计算共享内存大小（转换为uint32）
-func getSharedMemorySize() uint32 {
-	// 计算结构体大小并确保不超过uint32最大值
-	size := unsafe.Sizeof(SharedMemoryData{})
-	if size > 0xFFFFFFFF {
-		panic("Shared memory size exceeds maximum limit")
-	}
-	return uint32(size)
-}
+
 
 func WriteURLToSharedMemory(url string) error {
 

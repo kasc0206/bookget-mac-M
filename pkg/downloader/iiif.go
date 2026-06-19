@@ -908,23 +908,6 @@ func (d *IIIFDownloader) getMaxZoomLevel(width, height int) int {
 	return level
 }
 
-func (d *IIIFDownloader) calculateMaxZoomLevel(width, height, tileSize int) int {
-	maxDim := width
-	if height > maxDim {
-		maxDim = height
-	}
-
-	level := 0
-	for maxDim > tileSize {
-		maxDim = (maxDim + 1) / 2
-		level++
-	}
-
-	if level > 12 {
-		return 12
-	}
-	return level
-}
 
 //func (d *IIIFDownloader) needsUpscale(info *IIIFInfo, requestW, requestH int) bool {
 //	// 检查服务是否支持放大
@@ -1135,37 +1118,7 @@ func (d *IIIFDownloader) buildDeepZoomTileURL(data map[string]interface{}) (stri
 	return buf.String(), nil
 }
 
-func (d *IIIFDownloader) buildIIIFv2TileURL(data map[string]interface{}) (string, error) {
-	// 如果设置了自定义模板，优先使用模板
-	if d.iiifTileFormat.compiledTemplate != nil {
-		return d.buildIIIFTileURL(data)
-	}
 
-	// 默认的IIIF v2格式: {id}/{region}/{size}/{rotation}/{quality}.{format}
-	size := fmt.Sprintf("%d,", data["Width"].(int))
-	if format, ok := data["SizeFormat"].(TileSizeFormat); ok && format == WidthHeight {
-		size = fmt.Sprintf("%d,%d", data["Width"].(int), data["Height"].(int))
-	}
-
-	// 确保有必要的字段
-	if _, ok := data["Quality"]; !ok {
-		data["Quality"] = "default"
-	}
-	if _, ok := data["Format"]; !ok {
-		data["Format"] = "jpg"
-	}
-
-	return fmt.Sprintf("%s/%d,%d,%d,%d/%s/0/%s.%s",
-		data["ID"].(string),
-		data["X"].(int),
-		data["Y"].(int),
-		data["Width"].(int),
-		data["Height"].(int),
-		size,
-		data["Quality"].(string),
-		data["Format"].(string),
-	), nil
-}
 
 func (d *IIIFDownloader) buildIIIFv3TileURL(data map[string]interface{}) (string, error) {
 	// 如果设置了自定义模板，优先使用模板

@@ -2,54 +2,13 @@ package chttp
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 )
 
-var cookieNameSanitizer = strings.NewReplacer("\n", "-", "\r", "-")
 
-func sanitizeCookieName(n string) string {
-	return cookieNameSanitizer.Replace(n)
-}
-func sanitizeCookieValue(v string, quoted bool) string {
-	v = sanitizeOrWarn("Cookie.Value", validCookieValueByte, v)
-	if len(v) == 0 {
-		return v
-	}
-	if strings.ContainsAny(v, " ,") || quoted {
-		return `"` + v + `"`
-	}
-	return v
-}
-
-func validCookieValueByte(b byte) bool {
-	return 0x20 <= b && b < 0x7f && b != '"' && b != ';' && b != '\\'
-}
-
-func sanitizeOrWarn(fieldName string, valid func(byte) bool, v string) string {
-	ok := true
-	for i := 0; i < len(v); i++ {
-		if valid(v[i]) {
-			continue
-		}
-		log.Printf("net/http: invalid byte %q in %s; dropping invalid bytes", v[i], fieldName)
-		ok = false
-		break
-	}
-	if ok {
-		return v
-	}
-	buf := make([]byte, 0, len(v))
-	for i := 0; i < len(v); i++ {
-		if b := v[i]; valid(b) {
-			buf = append(buf, b)
-		}
-	}
-	return string(buf)
-}
 
 func ReadHttpCookiesFromFile(cookieFile string) ([]http.Cookie, error) {
 	fp, err := os.Open(cookieFile)

@@ -24,7 +24,6 @@ type IIIF struct {
 	xmlContent []byte
 	ctx        context.Context
 	cancel     context.CancelFunc
-	bookId     string
 }
 
 func NewIiifRouter() *IIIF {

@@ -125,10 +125,6 @@ func OpenWebBrowser(args []string) bool {
 	return true
 }
 
-func isProcessRunning(_ string) (bool, error) {
-
-	return false, nil
-}
 
 func IsBookgetGuiRunning() (ok bool, err error) {
 	return false, nil

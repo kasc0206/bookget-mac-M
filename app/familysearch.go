@@ -31,8 +31,6 @@ type Familysearch struct {
 
 	urlsFile   string
 	bufBuilder strings.Builder
-	bufBody    []byte
-	bufString  string
 	canvases   []string
 
 	rawUrl    string
@@ -40,7 +38,6 @@ type Familysearch struct {
 	savePath  string
 	bookId    string
 
-	urlType     int
 	dziTemplate string
 	baseUrl     string
 	sgBaseUrl   string
