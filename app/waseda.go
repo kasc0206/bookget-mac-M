@@ -2,6 +2,7 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/util"
 	"context"
@@ -12,17 +13,18 @@ import (
 	"path"
 	"regexp"
 	"sort"
-	"sync"
 )
 
 type Waseda struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewWaseda() *Waseda {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Waseda{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -58,79 +60,36 @@ func (r Waseda) download() (msg string, err error) {
 				continue
 			}
 			sortId := fmt.Sprintf("%04d", i+1)
-			r.dt.SavePath = config.Conf.Directory
 			log.Printf(" %d/%d volume, URL:%s \n", i+1, len(respVolume), vol)
 			filename := sortId + config.Conf.FileExt
-			dest := path.Join(r.dt.SavePath, filename)
-			r.doDownload(vol, dest)
+			r.dm.AddFromLegacy(vol, "GET", nil, nil, config.Conf.Directory, filename, 1, r.dt.Jar, true)
 		}
 	} else {
 		for i, vol := range respVolume {
 			if !config.VolumeRange(i) {
 				continue
 			}
+			var savePath string
 			if len(respVolume) == 1 {
-				r.dt.SavePath = config.Conf.Directory
+				savePath = config.Conf.Directory
 			} else {
 				vid := fmt.Sprintf("%04d", i+1)
-				r.dt.SavePath = CreateDirectory(vid)
+				savePath, _ = downloader.CreateVolumeDirectory(config.Conf.Directory, vid)
 			}
 			canvases, err := r.getCanvases(vol, r.dt.Jar)
 			if err != nil || canvases == nil {
 				fmt.Println(err)
 				continue
 			}
-
 			log.Printf(" %d/%d volume, %d pages \n", i+1, len(respVolume), len(canvases))
-			r.do(canvases)
+			r.dm.AddImageTasks(canvases, savePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
 		}
 	}
 
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return "", nil
-}
-
-func (r Waseda) do(imgUrls []string) (msg string, err error) {
-	if imgUrls == nil {
-		return
-	}
-	fmt.Println()
-	size := len(imgUrls)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		log.Printf("Get %d/%d page, URL: %s\n", i+1, size, uri)
-		imgUrl := uri
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
 }
 
 func (r Waseda) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
@@ -207,32 +166,4 @@ func (r Waseda) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
 	}
 	return bs, nil
-}
-
-func (r Waseda) doDownload(dUrl, dest string) bool {
-	if FileExist(dest) {
-		return false
-	}
-	referer := url.QueryEscape(r.dt.Url)
-	opts := gohttp.Options{
-		DestFile:    dest,
-		Overwrite:   false,
-		Concurrency: config.Conf.Threads,
-		CookieFile:  config.Conf.CookieFile,
-		HeaderFile:  config.Conf.HeaderFile,
-		CookieJar:   r.dt.Jar,
-		Headers: map[string]interface{}{
-			"User-Agent": config.Conf.UserAgent,
-			"Referer":    referer,
-		},
-	}
-	ctx := context.Background()
-	_, err := gohttp.FastGet(ctx, dUrl, opts)
-	if err == nil {
-		fmt.Println()
-		return true
-	}
-	fmt.Println(err)
-	fmt.Println()
-	return false
 }

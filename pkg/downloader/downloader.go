@@ -258,6 +258,13 @@ func (dm *DownloadManager) getTasksToProcess() []*DownloadTask {
 	return tasks
 }
 
+// Tasks 返回当前待处理的任务列表
+func (dm *DownloadManager) Tasks() []*DownloadTask {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	return dm.tasks
+}
+
 // processDziTasks 处理 IIIF/DZI 拼图下载任务
 func (dm *DownloadManager) processDziTasks() {
 	for _, dzi := range dm.dziTasks {

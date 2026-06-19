@@ -200,33 +200,8 @@ func (r *Harvard) doNormal(canvases []string) (err error) {
 		return errors.New("[err=doNormal]")
 	}
 	fmt.Println()
-	counter := 0
-	for i, imgUrl := range canvases {
-		if imgUrl == "" || !config.PageRange(i, sizeVol) {
-			continue
-		}
-		ext := util.FileExt(imgUrl)
-		sortId := fmt.Sprintf("%04d", i+1)
-		fileName := sortId + ext
-		dest := path.Join(r.savePath, fileName)
-		if FileExist(dest) {
-			continue
-		}
-		// 添加GET下载任务
-		r.dm.AddTask(
-			imgUrl,
-			"GET",
-			map[string]string{"User-Agent": config.Conf.UserAgent},
-			nil,
-			r.savePath,
-			fileName,
-			config.Conf.Threads,
-		)
-		counter++
-
-	}
-	fmt.Println()
-	r.dm.SetBar(counter)
+	headers := map[string]string{"User-Agent": config.Conf.UserAgent}
+	r.dm.AddImageTasks(canvases, r.savePath, config.Conf.FileExt, 0, headers, nil, true)
 	r.dm.Start()
 	return nil
 }
