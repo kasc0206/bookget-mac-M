@@ -4,7 +4,6 @@ import (
 	"bookget/config"
 	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"fmt"
 	"log"
@@ -13,19 +12,20 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 type Bluk struct {
-	dt  *DownloadTask
+	dt *DownloadTask
+	dm *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewBluk() *Bluk {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Bluk{
-		// 初始化字段
-		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -82,19 +82,19 @@ func (r *Bluk) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(canvases))
-		r.do(canvases)
+		if config.Conf.UseDzi {
+			r.doDezoomify(canvases)
+		} else {
+			r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+		}
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }
 
-func (r *Bluk) do(imgUrls []string) (msg string, err error) {
-	if config.Conf.UseDzi {
-		r.doDezoomify(imgUrls)
-	} else {
-		r.doNormal(imgUrls)
-	}
-	return "", err
-}
+
 
 func (r *Bluk) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	volumes = append(volumes, sUrl)
@@ -186,48 +186,4 @@ func (r *Bluk) doDezoomify(iiifUrls []string) bool {
 	return true
 }
 
-func (r *Bluk) doNormal(imgUrls []string) bool {
-	if imgUrls == nil {
-		return false
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		ext := util.FileExt(uri)
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		fmt.Println()
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return true
-}
+

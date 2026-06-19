@@ -3,6 +3,7 @@ package app
 import (
 	"bookget/config"
 	"bookget/model/ouroots"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"bookget/pkg/progressbar"
 	"bookget/pkg/util"
@@ -24,14 +25,16 @@ import (
 
 type Ouroots struct {
 	dt      *DownloadTask
+	dm      *downloader.DownloadManager
 	Counter int
 	bar     *progressbar.ProgressBar
 }
 
 func NewOuroots() *Ouroots {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Ouroots{
-		// 初始化字段
 		dt:      new(DownloadTask),
+		dm:      downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 		Counter: 0,
 	}
 }

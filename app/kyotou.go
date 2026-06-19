@@ -2,27 +2,28 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
 	"context"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type Kyotou struct {
 	dt *DownloadTask
+	dm *downloader.DownloadManager
 }
 
 func NewKyotou() *Kyotou {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Kyotou{
-		// 初始化字段
 		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -77,55 +78,15 @@ func (r *Kyotou) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(canvases))
-		r.do(canvases)
+		r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	}
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
 	}
 	return "", nil
 }
 
-func (r *Kyotou) do(imgUrls []string) (msg string, err error) {
-	if imgUrls == nil {
-		return "", nil
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		fmt.Println()
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return "", err
-}
+
 
 func (r *Kyotou) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	bs, err := r.getBody(sUrl, jar)

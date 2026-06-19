@@ -20,15 +20,17 @@ import (
 
 type Khirin struct {
 	dt     *DownloadTask
+	dm     *downloader.DownloadManager
 	apiUrl string
 	ctx    context.Context
 }
 
 func NewKhirin() *Khirin {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Khirin{
-		// 初始化字段
-		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -75,17 +77,18 @@ func (r *Khirin) download() (msg string, err error) {
 		return "requested URL was not found.", err
 	}
 	log.Printf(" %d pages \n", len(canvases))
-	return r.do(canvases)
-}
-
-func (r *Khirin) do(canvases []string) (msg string, err error) {
 	if config.Conf.UseDzi {
 		r.doDezoomify(canvases)
-	} else {
-		r.doNormal(canvases)
+		return "", nil
 	}
-	return "", err
+	r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
+	return "", nil
 }
+
+
 
 func (r *Khirin) doDezoomify(canvases []string) bool {
 	if canvases == nil {
@@ -125,42 +128,7 @@ func (r *Khirin) doDezoomify(canvases []string) bool {
 	return true
 }
 
-func (r *Khirin) doNormal(canvases []string) bool {
-	if canvases == nil {
-		return false
-	}
-	fmt.Println()
-	size := len(canvases)
-	ctx := context.Background()
-	for i, uri := range canvases {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + config.Conf.FileExt
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		log.Printf("Get %d/%d, URL: %s\n", i+1, size, uri)
-		opts := gohttp.Options{
-			DestFile:    dest,
-			Overwrite:   false,
-			Concurrency: 1,
-			CookieFile:  config.Conf.CookieFile,
-			HeaderFile:  config.Conf.HeaderFile,
-			CookieJar:   r.dt.Jar,
-			Headers: map[string]interface{}{
-				"User-Agent": config.Conf.UserAgent,
-			},
-		}
-		gohttp.FastGet(ctx, uri, opts)
-		fmt.Println()
-		//util.PrintSleepTime(config.Conf.Sleep)
-	}
-	fmt.Println()
-	return true
-}
+
 
 func (r *Khirin) getVolumes(_ string, _ *cookiejar.Jar) (volumes []string, err error) {
 	return nil, fmt.Errorf("getVolumes not implemented for Khirin")

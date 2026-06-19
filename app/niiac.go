@@ -5,7 +5,6 @@ import (
 	"bookget/model/iiif"
 	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,19 +13,20 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"sync"
 )
 
 type Niiac struct {
 	dt  *DownloadTask
+	dm  *downloader.DownloadManager
 	ctx context.Context
 }
 
 func NewNiiac() *Niiac {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Niiac{
-		// 初始化字段
-		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
+		ctx: ctx,
 	}
 }
 
@@ -84,19 +84,19 @@ func (p *Niiac) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(canvases))
-		p.do(canvases)
+		if config.Conf.UseDzi {
+			p.doDezoomify(canvases)
+		} else {
+			p.dm.AddImageTasks(canvases, p.dt.SavePath, config.Conf.FileExt, 0, nil, p.dt.Jar, true)
+		}
+	}
+	if len(p.dm.Tasks()) > 0 {
+		p.dm.Start()
 	}
 	return "", nil
 }
 
-func (p *Niiac) do(imgUrls []string) (msg string, err error) {
-	if config.Conf.UseDzi {
-		p.doDezoomify(imgUrls)
-	} else {
-		p.doNormal(imgUrls)
-	}
-	return "", err
-}
+
 
 func (p *Niiac) getVolumes(sUrl string, jar *cookiejar.Jar) (volumes []string, err error) {
 	bs, err := getBody(sUrl, jar)
@@ -198,48 +198,4 @@ func (p *Niiac) doDezoomify(iiifUrls []string) bool {
 	return true
 }
 
-func (p *Niiac) doNormal(imgUrls []string) bool {
-	if imgUrls == nil {
-		return false
-	}
-	size := len(imgUrls)
-	fmt.Println()
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		ext := util.FileExt(uri)
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + ext
-		dest := path.Join(p.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		fmt.Println()
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieFile:  config.Conf.CookieFile,
-				HeaderFile:  config.Conf.HeaderFile,
-				CookieJar:   p.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-			fmt.Println()
-		})
-	}
-	wg.Wait()
-	fmt.Println()
-	return true
-}
+

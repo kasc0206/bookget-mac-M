@@ -2,30 +2,29 @@ package app
 
 import (
 	"bookget/config"
+	"bookget/pkg/downloader"
 	"bookget/pkg/gohttp"
-	"bookget/pkg/util"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http/cookiejar"
 	"net/url"
-	"path"
 	"regexp"
 	"strings"
-	"sync"
 )
 
 type Gslib struct {
 	dt        *DownloadTask
+	dm        *downloader.DownloadManager
 	ServerUrl string
-	ctx       context.Context
 }
 
 func NewGslib() *Gslib {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Gslib{
-		dt:  new(DownloadTask),
-		ctx: context.Background(),
+		dt: new(DownloadTask),
+		dm: downloader.NewDownloadManager(ctx, cancel, config.Conf.MaxConcurrent),
 	}
 }
 
@@ -100,16 +99,15 @@ func (r *Gslib) download() (msg string, err error) {
 			continue
 		}
 		log.Printf(" %d/%d volume, %d pages \n", i+1, sizeVol, len(canvases))
-		r.do(canvases)
+		r.dm.AddImageTasks(canvases, r.dt.SavePath, config.Conf.FileExt, 0, nil, r.dt.Jar, true)
 	}
-
+	if len(r.dm.Tasks()) > 0 {
+		r.dm.Start()
+	}
 	return "", nil
 }
 
-func (r *Gslib) do(imgUrls []string) (msg string, err error) {
-	r.doNormal(imgUrls)
-	return "", err
-}
+
 
 func (r *Gslib) getVolumes(sUrl string, _ *cookiejar.Jar) (volumes []string, err error) {
 	// Currently assumes the initial URL is the only volume
@@ -189,43 +187,4 @@ func (r *Gslib) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	return bs, nil
 }
 
-func (r *Gslib) doNormal(imgUrls []string) bool {
-	if imgUrls == nil {
-		return false
-	}
-	size := len(imgUrls)
-	var wg sync.WaitGroup
-	q := QueueNew(int(config.Conf.Threads))
-	for i, uri := range imgUrls {
-		if uri == "" || !config.PageRange(i, size) {
-			continue
-		}
-		ext := util.FileExt(uri)
-		sortId := fmt.Sprintf("%04d", i+1)
-		filename := sortId + ext
-		dest := path.Join(r.dt.SavePath, filename)
-		if FileExist(dest) {
-			continue
-		}
-		imgUrl := uri
-		log.Printf("Get %d/%d  %s\n", i+1, size, imgUrl)
-		wg.Add(1)
-		q.Go(func() {
-			defer wg.Done()
-			ctx := context.Background()
-			opts := gohttp.Options{
-				DestFile:    dest,
-				Overwrite:   false,
-				Concurrency: 1,
-				CookieJar:   r.dt.Jar,
-				Headers: map[string]interface{}{
-					"User-Agent": config.Conf.UserAgent,
-					"Referer":    r.dt.Url,
-				},
-			}
-			gohttp.FastGet(ctx, imgUrl, opts)
-		})
-	}
-	wg.Wait()
-	return true
-}
+
