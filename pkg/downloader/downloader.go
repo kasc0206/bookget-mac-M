@@ -668,10 +668,16 @@ func (task *DownloadTask) detectSupportedMethods(ctx context.Context) error {
 
 // httpClient 返回配置了 CookieJar 的 HTTP 客户端
 func (task *DownloadTask) httpClient() *http.Client {
-	if task.Jar != nil {
-		return &http.Client{Jar: task.Jar}
+	tr := &http.Transport{
+		DisableKeepAlives: true,
 	}
-	return &http.Client{}
+	if task.Jar != nil {
+		return &http.Client{
+			Jar:       task.Jar,
+			Transport: tr,
+		}
+	}
+	return &http.Client{Transport: tr}
 }
 
 // 辅助函数: 从URL获取文件名
