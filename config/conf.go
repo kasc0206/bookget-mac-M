@@ -3,12 +3,13 @@ package config
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/spf13/pflag"
 )
 
 type Input struct {
@@ -111,9 +112,13 @@ func Init(ctx context.Context) bool {
 	}
 	initSeqRange()
 	initVolumeRange()
-	//保存目录处理
-	_ = os.Mkdir(Conf.Directory, os.ModePerm)
-	//_ = os.Mkdir(CacheDir(), os.ModePerm)
+	//保存目录处理（防路径穿越）
+	safeDir := filepath.Clean(Conf.Directory)
+	Conf.Directory = safeDir
+	if err := os.MkdirAll(safeDir, os.ModePerm); err != nil {
+		fmt.Printf("无法创建目录: %s, 错误: %v\n", safeDir, err)
+		return false
+	}
 	return true
 }
 
