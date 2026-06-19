@@ -142,7 +142,11 @@ func (r *Usthk) getBody(sUrl string) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if resp.GetStatusCode() != 200 || bs == nil {
-		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
+		return nil, &HTTPError{
+			StatusCode: resp.GetStatusCode(),
+			URL:        sUrl,
+			Message:    resp.GetReasonPhrase(),
+		}
 	}
 	return bs, nil
 }

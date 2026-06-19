@@ -19,6 +19,17 @@ import (
 	"sync"
 )
 
+// HTTPError 表示 HTTP 请求错误（含状态码）
+type HTTPError struct {
+	StatusCode int
+	URL        string
+	Message    string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("HTTP %d: %s (%s)", e.StatusCode, e.Message, e.URL)
+}
+
 // BaseDownloader 封装下载器的公共字段和方法
 // 各站点下载器可通过嵌入此类型减少重复代码
 type BaseDownloader struct {
@@ -78,7 +89,11 @@ func (b *BaseDownloader) GetBody(sUrl string) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
+		return nil, &HTTPError{
+			StatusCode: resp.GetStatusCode(),
+			URL:        sUrl,
+			Message:    resp.GetReasonPhrase(),
+		}
 	}
 	return bs, nil
 }

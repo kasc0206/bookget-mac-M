@@ -125,7 +125,11 @@ func (p *Utokyo) getBody(sUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
+		return nil, &HTTPError{
+			StatusCode: resp.GetStatusCode(),
+			URL:        sUrl,
+			Message:    resp.GetReasonPhrase(),
+		}
 	}
 	return bs, nil
 }

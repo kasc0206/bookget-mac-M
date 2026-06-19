@@ -167,7 +167,11 @@ func (r *NdlJP) getBody(apiUrl string, jar *cookiejar.Jar) ([]byte, error) {
 	}
 	bs, _ := resp.GetBody()
 	if bs == nil {
-		return nil, fmt.Errorf("ErrCode:%d, %s", resp.GetStatusCode(), resp.GetReasonPhrase())
+		return nil, &HTTPError{
+			StatusCode: resp.GetStatusCode(),
+			URL:        apiUrl,
+			Message:    resp.GetReasonPhrase(),
+		}
 	}
 	return bs, nil
 }
